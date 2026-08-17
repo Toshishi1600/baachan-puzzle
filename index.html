@@ -36,8 +36,8 @@
     padding:20px 16px 28px;
   }
   header{width:100%;text-align:center;margin-bottom:6px;}
-  h1{font-size:26px;font-weight:900;margin:0 0 4px;letter-spacing:.03em;}
-  .date{font-size:15px;color:var(--ink-soft);font-weight:500;}
+  h1{font-size:30px;font-weight:900;margin:0 0 4px;letter-spacing:.03em;}
+  .date{font-size:17px;color:var(--ink-soft);font-weight:500;}
   .diff-label{
     display:inline-block;margin-top:10px;background:#fff;border-radius:12px;
     padding:6px 14px;font-size:13px;font-weight:700;color:var(--shu);
@@ -53,9 +53,9 @@
     box-shadow:0 2px 0 var(--paper-deep), 0 4px 10px rgba(59,50,42,.08);
     flex:1;
   }
-  .score-label{font-size:12px;color:var(--ink-soft);font-weight:500;}
-  .score-value{font-size:24px;font-weight:900;font-variant-numeric:tabular-nums;color:var(--shu);}
-  .time-value{font-size:24px;font-weight:900;font-variant-numeric:tabular-nums;}
+  .score-label{font-size:14px;color:var(--ink-soft);font-weight:500;}
+  .score-value{font-size:28px;font-weight:900;font-variant-numeric:tabular-nums;color:var(--shu);}
+  .time-value{font-size:28px;font-weight:900;font-variant-numeric:tabular-nums;}
   .cal-btn{
     background:#fff;border:none;border-radius:16px;
     width:52px;height:52px;font-size:24px;flex-shrink:0;
@@ -79,6 +79,11 @@
     transition:transform .15s ease, opacity .18s ease;
   }
   .cell.empty{visibility:hidden;pointer-events:none;}
+  .cell.locked{pointer-events:none;cursor:default;}
+  .cell.locked::after{
+    content:'';position:absolute;inset:0;border-radius:12px;
+    background:rgba(59,50,42,.55);
+  }
   .cell:active{transform:scale(.92);}
   .cell.pop{animation:pop .22s ease forwards;}
   @keyframes pop{0%{transform:scale(1);opacity:1;}100%{transform:scale(.2);opacity:0;}}
@@ -96,7 +101,7 @@
     margin-top:18px;width:100%;display:grid;grid-template-columns:.85fr .85fr 1.3fr;gap:8px;
   }
   .hint-btn,.giveup-btn,.newgame{
-    border:none;border-radius:18px;padding:16px 4px;font-size:15px;font-weight:700;
+    border:none;border-radius:18px;padding:16px 4px;font-size:17px;font-weight:700;
     font-family:inherit;cursor:pointer;
   }
   .hint-btn,.giveup-btn{
@@ -111,14 +116,14 @@
   .cell.hint{outline:4px solid var(--shu);outline-offset:-3px;animation:hintPulse .6s ease-in-out infinite alternate;}
   @keyframes hintPulse{from{box-shadow:0 0 2px rgba(193,68,14,.5);}to{box-shadow:0 0 16px rgba(193,68,14,.95);}}
 
-  .msg{margin-top:12px;font-size:15px;color:var(--ink-soft);text-align:center;min-height:20px;}
+  .msg{margin-top:12px;font-size:17px;color:var(--ink-soft);text-align:center;min-height:20px;}
 
   .demo-controls{
     margin-top:10px;width:100%;display:flex;gap:8px;justify-content:center;
   }
   .demo-controls button{
     background:#fff;color:var(--ink-soft);border:2px solid var(--paper-deep);
-    border-radius:14px;padding:10px 20px;font-size:15px;font-weight:700;
+    border-radius:14px;padding:10px 20px;font-size:17px;font-weight:700;
     font-family:inherit;cursor:pointer;box-shadow:0 3px 0 var(--paper-deep);
   }
   .demo-controls button:active{transform:translateY(3px);box-shadow:0 0 0 var(--paper-deep);}
@@ -134,38 +139,52 @@
     background:var(--paper);border-radius:22px;padding:26px 22px;
     width:100%;max-width:400px;box-shadow:0 10px 30px rgba(0,0,0,.25);text-align:center;
   }
-  .diff-card h2{margin:0 0 4px;font-size:21px;font-weight:900;}
-  .diff-card p{margin:0 0 18px;font-size:14px;color:var(--ink-soft);}
+  .diff-card h2{margin:0 0 4px;font-size:24px;font-weight:900;}
+  .diff-card p{margin:0 0 18px;font-size:16px;color:var(--ink-soft);}
   .diff-choice{
     width:100%;background:#fff;border:2px solid transparent;border-radius:16px;
     padding:16px;margin-bottom:12px;font-family:inherit;cursor:pointer;
     display:flex;flex-direction:column;gap:2px;text-align:left;
     box-shadow:0 2px 0 var(--paper-deep),0 4px 10px rgba(59,50,42,.06);
   }
-  .diff-choice .name{font-size:18px;font-weight:900;color:var(--ink);}
-  .diff-choice .desc{font-size:13px;color:var(--ink-soft);font-weight:500;}
+  .diff-choice .name{font-size:21px;font-weight:900;color:var(--ink);}
+  .diff-choice .desc{font-size:15px;color:var(--ink-soft);font-weight:500;}
+  .beginner-badge{
+    display:inline-block;margin-top:8px;background:var(--shu);color:#fff;
+    font-size:13px;font-weight:700;padding:4px 12px;border-radius:999px;
+  }
+  .tutorial-body{text-align:left;margin-bottom:20px;}
+  .tutorial-body p{font-size:16px;line-height:1.8;margin:0 0 14px;color:var(--ink);}
+  .tutorial-body b{color:var(--shu);}
   .diff-choice:active{transform:scale(.98);}
 
   .result-card{
     background:var(--paper);border-radius:22px;padding:28px 24px;
     width:100%;max-width:400px;box-shadow:0 10px 30px rgba(0,0,0,.25);text-align:center;
   }
-  .result-card h2{margin:0 0 4px;font-size:22px;font-weight:900;color:var(--shu);}
-  .result-card .result-diff{font-size:13px;color:var(--ink-soft);font-weight:700;margin-bottom:18px;}
-  .result-stats{display:flex;gap:10px;margin-bottom:22px;}
+  .result-card h2{margin:0 0 4px;font-size:26px;font-weight:900;color:var(--shu);}
+  .result-card .result-diff{font-size:15px;color:var(--ink-soft);font-weight:700;margin-bottom:18px;}
+  .result-stats{display:flex;gap:10px;margin-bottom:8px;}
   .result-stats .box{flex:1;background:#fff;border-radius:14px;padding:14px 6px;box-shadow:0 2px 8px rgba(59,50,42,.08);}
-  .result-stats .box .label{font-size:12px;color:var(--ink-soft);font-weight:500;margin-bottom:2px;}
-  .result-stats .box .value{font-size:22px;font-weight:900;font-variant-numeric:tabular-nums;}
+  .result-stats .box .label{font-size:13px;color:var(--ink-soft);font-weight:500;margin-bottom:2px;}
+  .result-stats .box .value{font-size:24px;font-weight:900;font-variant-numeric:tabular-nums;}
+  .result-breakdown{font-size:13px;color:var(--shu);font-weight:700;text-align:center;margin-bottom:16px;}
   .result-demo{
     width:100%;background:#fff;color:var(--ink-soft);border:2px solid var(--paper-deep);border-radius:16px;
-    padding:14px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;
+    padding:14px;font-size:17px;font-weight:700;font-family:inherit;cursor:pointer;
     box-shadow:0 4px 0 var(--paper-deep);margin-bottom:12px;
   }
   .result-demo:active{transform:translateY(4px);box-shadow:0 0 0 var(--paper-deep);}
   .result-demo:disabled{opacity:.4;}
+  .result-share{
+    width:100%;background:#fff;color:var(--shu);border:2px solid var(--shu);border-radius:16px;
+    padding:14px;font-size:17px;font-weight:700;font-family:inherit;cursor:pointer;
+    margin-bottom:12px;
+  }
+  .result-share:active{transform:translateY(2px);}
   .result-newgame{
     width:100%;background:var(--shu);color:#fff;border:none;border-radius:16px;
-    padding:16px;font-size:17px;font-weight:700;font-family:inherit;cursor:pointer;
+    padding:16px;font-size:19px;font-weight:700;font-family:inherit;cursor:pointer;
     box-shadow:0 4px 0 #96350a;
   }
   .result-newgame:active{transform:translateY(4px);box-shadow:0 0 0 #96350a;}
@@ -223,6 +242,7 @@
       <div class="score-label">経過時間</div>
       <div class="time-value" id="timeValue">00:00</div>
     </div>
+    <button class="cal-btn" id="openTutorial" aria-label="あそびかた">❓</button>
     <button class="cal-btn" id="openCal" aria-label="記録を見る">📅</button>
   </div>
 
@@ -247,9 +267,25 @@
   <div class="diff-card">
     <h2>難易度をえらんでね</h2>
     <p>あとから「新しいゲームを始める」でも選び直せます</p>
-    <button class="diff-choice" data-d="easy"><span class="name">かんたん</span><span class="desc">5色・6×6マス</span></button>
-    <button class="diff-choice" data-d="normal"><span class="name">ふつう</span><span class="desc">7色・6×6マス</span></button>
-    <button class="diff-choice" data-d="hard"><span class="name">むずかしい</span><span class="desc">7色・8×9マス</span></button>
+    <button class="diff-choice" data-d="easy">
+      <span class="name">かんたん</span>
+      <span class="desc">5色・6×6マス</span>
+      <span class="beginner-badge">はじめての人はこちらから</span>
+    </button>
+    <button class="diff-choice" data-d="normal"><span class="name">ふつう</span><span class="desc">7色・6×6マス・最初は一番下の行から</span></button>
+    <button class="diff-choice" data-d="hard"><span class="name">むずかしい</span><span class="desc">7色・8×10マス・最初は一番下の行から</span></button>
+  </div>
+</div>
+
+<div class="overlay" id="tutorialOverlay">
+  <div class="diff-card">
+    <h2>あそびかた</h2>
+    <div class="tutorial-body">
+      <p>🟢 <b>同じ色が3つ以上つながっているところ</b>をタップすると消えるよ</p>
+      <p>🔴 <b>ふつう・むずかしい</b>では、さいしょの1回だけ<b>一番下の行</b>をタップしてね</p>
+      <p>💡 こまったら「ヒント」ボタンを押すと、消せるところを教えてくれるよ</p>
+    </div>
+    <button class="newgame" id="tutorialCloseBtn" style="width:100%;">わかった!あそぶ</button>
   </div>
 </div>
 
@@ -267,7 +303,9 @@
         <div class="value" id="resultTime">00:00</div>
       </div>
     </div>
+    <div class="result-breakdown" id="resultBreakdown" style="display:none;"></div>
     <button class="result-demo" id="resultDemoBtn" style="display:none;">お手本を自動再生する</button>
+    <button class="result-share" id="resultShareBtn">🏆 スコアを共有する</button>
     <button class="result-newgame" id="resultNewGameBtn">新しいゲームを始める</button>
     <button class="result-close" id="resultCloseBtn">盤面を見る</button>
   </div>
@@ -290,9 +328,9 @@
 
 <script>
 const DIFFICULTIES={
-  easy:  {label:'かんたん', colors:5, rows:6, cols:6, color:'var(--c1)', scoreMult:0.7},
-  normal:{label:'ふつう',   colors:7, rows:6, cols:6, color:'var(--c2)', scoreMult:1},
-  hard:  {label:'むずかしい',colors:7, rows:9, cols:8, color:'var(--c5)', scoreMult:1.4}
+  easy:  {label:'かんたん', colors:5, rows:6, cols:6, color:'var(--c1)', scoreMult:0.7, delayedMerges:0, firstTapBottomRow:false, targetTime:60,  timeBonusPerSec:2},
+  normal:{label:'ふつう',   colors:7, rows:6, cols:6, color:'var(--c2)', scoreMult:1,   delayedMerges:1, firstTapBottomRow:true,  targetTime:90,  timeBonusPerSec:3},
+  hard:  {label:'むずかしい',colors:7, rows:10, cols:8, color:'var(--c5)', scoreMult:1.4, delayedMerges:3, firstTapBottomRow:true,  targetTime:150, timeBonusPerSec:4}
 };
 const STORAGE_KEY='puzzle-daily-records';
 const SYMBOLS=['●','■','▲','◆','★','✚','✖'];
@@ -307,6 +345,7 @@ let timerHandle=null;
 let busy=false;
 let roundOver=true;      // ゲーム開始前はtrue(操作不可)
 let hintPenaltyPending=false; // ヒントを使った直後は、次に消した時のスコアが半分になる
+let firstMoveDone=false; // ふつう・むずかしいでは、最初の1回だけ一番下の行を消す必要がある
 let records={};
 let calMonthOffset=0;
 
@@ -450,17 +489,24 @@ function allGroups(g){
 }
 
 // ランダムな順番で何度も自動プレイしてみて、全部消し切れる手順が見つかるか探す
-function trySolveFull(startGrid,attempts){
+function trySolveFull(startGrid,attempts,requireFirstBottom){
   for(let a=0;a<attempts;a++){
     let g=cloneGrid(startGrid);
     const sequence=[];
+    let first=true;
     while(true){
-      const groups=allGroups(g);
+      let groups=allGroups(g);
       if(groups.length===0) break;
+      if(first && requireFirstBottom){
+        // 最初の1手は、一番下の行を含むグループしか選べない(ふつう・むずかしいのルールに合わせる)
+        groups=groups.filter(gr=>gr.some(([r,c])=>r===ROWS-1));
+        if(groups.length===0) break;
+      }
       const pick=groups[Math.floor(Math.random()*groups.length)];
       sequence.push(pick);
       pick.forEach(([r,c])=>{ g[r][c]=null; });
       g=applyGravityAndCompact(g);
+      first=false;
     }
     const isEmpty=g.every(row=>row.every(cell=>cell===null));
     if(isEmpty) return sequence;
@@ -468,11 +514,45 @@ function trySolveFull(startGrid,attempts){
   return null;
 }
 
+// 「上から落とさないと3個以上にならないグループ」をわざと仕込む(ふつう・むずかしい用)
+function injectDelayedMerge(grid,count){
+  let injected=0, attempts=0;
+  if(ROWS<5) return 0;
+  while(injected<count && attempts<200){
+    attempts++;
+    const c=Math.floor(Math.random()*COLS);
+    const r0=Math.floor(Math.random()*(ROWS-4));
+    const T=randColor();
+    let B=randColor();
+    while(B===T) B=randColor();
+    // 縦に: T(1つだけ) → B,B(邪魔なブロック) → T,T(2つ) の並びにする
+    grid[r0][c]=T;
+    grid[r0+1][c]=B;
+    grid[r0+2][c]=B;
+    grid[r0+3][c]=T;
+    grid[r0+4][c]=T;
+    // 邪魔なブロックB自体はちゃんと3マス以上で消せるように、隣の列にも1マス伸ばす
+    const neighborCols=[c-1,c+1].filter(nc=>nc>=0&&nc<COLS);
+    if(neighborCols.length>0){
+      const nc=neighborCols[Math.floor(Math.random()*neighborCols.length)];
+      const whichRow = Math.random()<0.5 ? r0+1 : r0+2;
+      grid[whichRow][nc]=B;
+    }
+    injected++;
+  }
+  return injected;
+}
+
 function makeGrid(){
-  const GEN_RETRIES=20, SOLVE_ATTEMPTS=150;
+  const GEN_RETRIES=90, SOLVE_ATTEMPTS=80;
+  const d=DIFFICULTIES[difficulty]||{};
+  const delayedCount = d.delayedMerges || 0;
+  const requireFirstBottom = !!d.firstTapBottomRow;
   for(let i=0;i<GEN_RETRIES;i++){
     const g=tileBoard();
-    if(trySolveFull(g,SOLVE_ATTEMPTS)) return g;
+    if(delayedCount>0) injectDelayedMerge(g,delayedCount);
+    // 実際のプレイと同じ「最初の1手は一番下の行」ルールの下で、全消しできることを検証する
+    if(trySolveFull(g,SOLVE_ATTEMPTS,requireFirstBottom)) return g;
   }
   return tileBoard(); // 万一見つからない場合の保険(ごくまれ)
 }
@@ -521,11 +601,14 @@ function render(){
   boardEl.style.gridTemplateRows=`repeat(${ROWS},1fr)`;
   boardEl.innerHTML='';
   const fontSize = COLS>=8 ? 'clamp(14px,3.6vw,20px)' : 'clamp(18px,5vw,26px)';
+  const lockNonBottom = DIFFICULTIES[difficulty] && DIFFICULTIES[difficulty].firstTapBottomRow && !firstMoveDone;
   for(let r=0;r<ROWS;r++){
     for(let c=0;c<COLS;c++){
       const val=grid[r][c];
       const btn=document.createElement('button');
-      btn.className='cell'+(val===null?' empty':' c'+val);
+      let cls='cell'+(val===null?' empty':' c'+val);
+      if(lockNonBottom && val!==null && r!==ROWS-1) cls+=' locked';
+      btn.className=cls;
       btn.style.fontSize=fontSize;
       if(val!==null) btn.textContent=SYMBOLS[val];
       btn.dataset.r=r; btn.dataset.c=c;
@@ -542,6 +625,14 @@ async function onCellTap(e){
   const c=parseInt(e.currentTarget.dataset.c,10);
   if(!grid[r] || grid[r][c]===null || grid[r][c]===undefined) return;
 
+  if(DIFFICULTIES[difficulty].firstTapBottomRow && !firstMoveDone && r!==ROWS-1){
+    e.currentTarget.classList.add('shake');
+    setTimeout(()=>{ e.currentTarget && e.currentTarget.classList.remove('shake'); },300);
+    msgEl.textContent='さいしょは、一番下の行をタップしてね';
+    setTimeout(()=>{ if(!roundOver && !busy) msgEl.textContent='同じ色を3つ以上つなげてタップしてね'; },2200);
+    return;
+  }
+
   const group=findGroup(grid,r,c);
   if(group.length<3){
     e.currentTarget.classList.add('shake');
@@ -551,6 +642,7 @@ async function onCellTap(e){
 
   busy=true;
   try{
+    firstMoveDone=true;
     let gained=Math.round(group.length*(group.length-1)*5*DIFFICULTIES[difficulty].scoreMult);
     let penalized=false;
     if(hintPenaltyPending){
@@ -573,7 +665,7 @@ async function onCellTap(e){
     render();
 
     if(!hasMove(grid)){
-      await finishRound('おつかれさま!');
+      await finishRound('おつかれさま!',true);
     }else if(penalized){
       msgEl.textContent='ヒントを使った次だったから、スコアが半分になったよ';
       setTimeout(()=>{ if(!roundOver) msgEl.textContent='同じ色を3つ以上つなげてタップしてね'; },2200);
@@ -586,21 +678,34 @@ async function onCellTap(e){
   }
 }
 
-async function finishRound(prefix){
+async function finishRound(prefix,allowTimeBonus){
   roundOver=true;
   giveupBtn.disabled=true;
   hintBtn.disabled=true;
   const elapsed=stopTimer();
-  msgEl.textContent=`${prefix} スコア ${score}・時間 ${fmtTime(elapsed)} でした`;
-  await recordRound(score,elapsed);
-  showResultPopup(prefix,score,elapsed);
+  const d=DIFFICULTIES[difficulty];
+  // 何か1つでも消せていて、かつギブアップでない場合だけ「はやさボーナス」が付く
+  const timeBonus = (allowTimeBonus && score>0) ? Math.max(0, d.targetTime-elapsed)*d.timeBonusPerSec : 0;
+  const finalScore = score+timeBonus;
+  msgEl.textContent = timeBonus>0
+    ? `${prefix} スコア ${finalScore}(きほん${score}+はやさボーナス${timeBonus})・時間 ${fmtTime(elapsed)} でした`
+    : `${prefix} スコア ${finalScore}・時間 ${fmtTime(elapsed)} でした`;
+  await recordRound(finalScore,elapsed);
+  showResultPopup(prefix,finalScore,elapsed,score,timeBonus);
 }
 
-function showResultPopup(prefix,finalScore,elapsedSec){
+function showResultPopup(prefix,finalScore,elapsedSec,baseScore,timeBonus){
   document.getElementById('resultTitle').textContent=prefix;
   document.getElementById('resultDiff').textContent=DIFFICULTIES[difficulty].label+`(${DIFFICULTIES[difficulty].colors}色・${DIFFICULTIES[difficulty].rows}×${DIFFICULTIES[difficulty].cols})`;
   document.getElementById('resultScore').textContent=finalScore;
   document.getElementById('resultTime').textContent=fmtTime(elapsedSec);
+  const breakdownEl=document.getElementById('resultBreakdown');
+  if(timeBonus>0){
+    breakdownEl.textContent=`(きほん${baseScore} + はやさボーナス${timeBonus})`;
+    breakdownEl.style.display='block';
+  }else{
+    breakdownEl.style.display='none';
+  }
   const demoBtn=document.getElementById('resultDemoBtn');
   demoBtn.style.display='block';
   demoBtn.disabled=false;
@@ -611,15 +716,50 @@ function hideResultPopup(){
   document.getElementById('resultOverlay').classList.remove('show');
 }
 
+// ---------- スコアの共有 ----------
+async function shareScore(){
+  const d=DIFFICULTIES[difficulty];
+  const scoreText=document.getElementById('resultScore').textContent;
+  const timeText=document.getElementById('resultTime').textContent;
+  const shareText=`いろあわせパズル「${d.label}」でスコア${scoreText}・タイム${timeText}を出したよ!挑戦してみてね`;
+  const url=location.href;
+
+  if(navigator.share){
+    try{
+      await navigator.share({title:'いろあわせパズル',text:shareText,url});
+    }catch(e){ /* 共有シートをキャンセルした場合などは何もしない */ }
+    return;
+  }
+  const fullText=`${shareText}\n${url}`;
+  try{
+    await navigator.clipboard.writeText(fullText);
+    alert('スコアとリンクをコピーしたよ。LINEなどに貼り付けて送ってね');
+  }catch(e){
+    prompt('このテキストをコピーして送ってね',fullText);
+  }
+}
+document.getElementById('resultShareBtn').addEventListener('click',shareScore);
+
 async function giveUp(){
   if(roundOver||busy) return;
-  await finishRound('ギブアップ!');
+  await finishRound('ギブアップ!',false);
 }
 
 // ---------- ヒント(使うと次に消した時のスコアが半分になる) ----------
 async function showHint(){
   if(roundOver||busy) return;
-  const group=bestGroup(grid);
+  const restrictBottom = DIFFICULTIES[difficulty].firstTapBottomRow && !firstMoveDone;
+  let group;
+  if(restrictBottom){
+    const candidates=allGroups(grid).filter(g=>g.some(([r,c])=>r===ROWS-1));
+    group = candidates.length ? candidates.reduce((a,b)=>b.length>a.length?b:a) : null;
+    if(!group){
+      msgEl.textContent='一番下の行に消せるところが見当たらないみたい';
+      return;
+    }
+  }else{
+    group=bestGroup(grid);
+  }
   if(!group){
     msgEl.textContent='もう消せる場所がないみたい。ギブアップしてもいいよ';
     return;
@@ -693,18 +833,29 @@ async function autoSolveDemo(){
 
   demoStartGrid=cloneGrid(grid); // ここから、もう一度再生できるように保存しておく
 
-  let sequence=trySolveFull(grid,150);
+  // このラウンドでまだ最初の一手を消化していない状態からの再生なら、
+  // お手本の最初の一手も「一番下の行」限定にする(かんたん以外)
+  const requireFirstBottom = DIFFICULTIES[difficulty].firstTapBottomRow && (demoRestarted || !firstMoveDone);
+
+  let sequence=trySolveFull(grid,150,requireFirstBottom);
   demoFullyClearable=!!sequence;
   if(!sequence){
     // 途中の手の順番によっては全消しできない場合もあるので、その時は「消せるだけ」見せる
     sequence=[];
     let g=cloneGrid(grid);
+    let first=true;
     while(true){
-      const group=bestGroup(g);
-      if(!group) break;
+      let groups=allGroups(g);
+      if(groups.length===0) break;
+      if(first && requireFirstBottom){
+        groups=groups.filter(gr=>gr.some(([r,c])=>r===ROWS-1));
+        if(groups.length===0) break;
+      }
+      const group = groups.reduce((a,b)=>b.length>a.length?b:a);
       sequence.push(group);
       group.forEach(([r,c])=>{ g[r][c]=null; });
       g=applyGravityAndCompact(g);
+      first=false;
     }
   }
   demoSequence=sequence;
@@ -777,9 +928,12 @@ function startGame(diff){
   roundOver=false;
   busy=false;
   hintPenaltyPending=false;
+  firstMoveDone=false;
   giveupBtn.disabled=false;
   hintBtn.disabled=false;
-  msgEl.textContent='同じ色を3つ以上つなげてタップしてね';
+  msgEl.textContent = DIFFICULTIES[diff].firstTapBottomRow
+    ? 'さいしょは、一番下の行をタップしてね'
+    : '同じ色を3つ以上つなげてタップしてね';
   render();
   startTimer();
   hideDiffPopup();
@@ -787,6 +941,22 @@ function startGame(diff){
 
 function showDiffPopup(){document.getElementById('diffOverlay').classList.add('show');}
 function hideDiffPopup(){document.getElementById('diffOverlay').classList.remove('show');}
+
+// ---------- あそびかた(チュートリアル) ----------
+const TUTORIAL_SEEN_KEY='puzzle-tutorial-seen';
+let pendingFirstLaunch=false;
+const tutorialOverlay=document.getElementById('tutorialOverlay');
+function showTutorial(){ tutorialOverlay.classList.add('show'); }
+function hideTutorial(){ tutorialOverlay.classList.remove('show'); }
+document.getElementById('openTutorial').addEventListener('click',showTutorial);
+document.getElementById('tutorialCloseBtn').addEventListener('click',()=>{
+  hideTutorial();
+  if(pendingFirstLaunch){
+    try{ localStorage.setItem(TUTORIAL_SEEN_KEY,'1'); }catch(e){}
+    pendingFirstLaunch=false;
+    showDiffPopup();
+  }
+});
 
 document.getElementById('diffOverlay').addEventListener('click',(e)=>{
   const btn=e.target.closest('.diff-choice');
@@ -891,7 +1061,14 @@ document.getElementById('nextMonth').addEventListener('click',()=>{calMonthOffse
 (async function init(){
   todayLabel();
   await loadRecords();
-  showDiffPopup();
+  let seen=null;
+  try{ seen=localStorage.getItem(TUTORIAL_SEEN_KEY); }catch(e){}
+  if(!seen){
+    pendingFirstLaunch=true;
+    showTutorial();
+  }else{
+    showDiffPopup();
+  }
 })();
 </script>
 </body>
