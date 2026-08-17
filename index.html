@@ -98,10 +98,11 @@
   .c6{background:linear-gradient(160deg,var(--c6),#357d70);}
 
   .action-row{
-    margin-top:18px;width:100%;display:grid;grid-template-columns:.85fr .85fr 1.3fr;gap:8px;
+    margin-top:18px;width:100%;display:grid;grid-template-columns:.7fr .9fr 1.3fr;gap:6px;
   }
+  .action-row.no-undo{grid-template-columns:.9fr 1.5fr;}
   .hint-btn,.giveup-btn,.newgame{
-    border:none;border-radius:18px;padding:16px 4px;font-size:17px;font-weight:700;
+    border:none;border-radius:18px;padding:14px 2px;font-size:14px;font-weight:700;
     font-family:inherit;cursor:pointer;
   }
   .hint-btn,.giveup-btn{
@@ -278,6 +279,7 @@
   .cal-day.today{outline:2px solid var(--shu);outline-offset:-2px;}
   .cal-day .dots{display:flex;gap:2px;margin-top:2px;}
   .cal-day .dot{width:7px;height:7px;border-radius:50%;}
+  .cal-day .dot-shared{background:var(--ink-soft);opacity:.5;}
   .cal-close{
     width:100%;margin-top:14px;background:var(--ink);color:#fff;border:none;
     border-radius:14px;padding:13px;font-size:16px;font-weight:700;font-family:inherit;cursor:pointer;
@@ -318,10 +320,10 @@
     <button id="demoReplayBtn" style="display:none;">🔁 もう一度見る</button>
   </div>
 
-  <div class="action-row">
+  <div class="action-row" id="actionRow">
     <button class="hint-btn" id="hintBtn" disabled>ヒント</button>
-    <button class="giveup-btn" id="giveupBtn" disabled>ギブアップ</button>
-    <button class="newgame" id="newGameBtn">新しいゲームを始める</button>
+    <button class="hint-btn" id="undoBtn" disabled>↩️ 1手戻る</button>
+    <button class="giveup-btn" id="giveupBtn">新しいゲームを始める</button>
   </div>
 </div>
 
@@ -329,7 +331,7 @@
   <div class="diff-card">
     <h2>難易度をえらんでね</h2>
     <div class="diff-subrow">
-      <p>あとから「新しいゲームを始める」でも選び直せます</p>
+      <p>あとから画面下のボタンでも選び直せます</p>
       <button class="card-cal-btn-inline" id="openCalFromDiff" aria-label="記録を見る">📅</button>
     </div>
     <button class="diff-choice" data-d="easy">
@@ -341,7 +343,7 @@
     <button class="diff-choice" data-d="hard"><span class="name">むずかしい</span><span class="desc">7色・8×9マス・最初は一番下の行から</span></button>
     <button class="diff-choice" data-d="infinite"><span class="name">♾️ むげん</span><span class="desc">30秒間で何個消せるかチャレンジ・上から無限に降ってくる</span></button>
     <div class="ranking-section" id="rankingSection"></div>
-    <div class="version-tag">v1.2.0</div>
+    <div class="version-tag">v1.3.2</div>
   </div>
 </div>
 
@@ -371,7 +373,8 @@
     <div class="tutorial-body">
       <p>🟢 <b>同じ色が3つ以上つながっているところ</b>をタップすると消えるよ</p>
       <p>🔴 <b>ふつう・むずかしい</b>では、さいしょの1回だけ<b>一番下の行</b>をタップしてね</p>
-      <p>💡 こまったら「ヒント」ボタンを押すと、消せるところを教えてくれるよ</p>
+      <p>💡 こまったら「ヒント」ボタンを押すと、消せるところを教えてくれるよ(次に消すスコアは半分になるよ)</p>
+      <p>↩️ 「1手戻る」を押すと直前の1手をやり直せるけど、少しスコアが減るよ</p>
     </div>
     <button class="newgame" id="tutorialCloseBtn" style="width:100%;">わかった!あそぶ</button>
   </div>
@@ -421,10 +424,10 @@
 
 <script>
 const DIFFICULTIES={
-  easy:  {label:'かんたん', colors:5, rows:6, cols:6, color:'var(--c1)', scoreMult:0.7, delayedMerges:0, firstTapBottomRow:false, targetTime:60,  timeBonusPerSec:2, maxStartGroupSize:null, perfectBonus:200},
-  normal:{label:'ふつう',   colors:7, rows:6, cols:6, color:'var(--c2)', scoreMult:1,   delayedMerges:1, firstTapBottomRow:true,  targetTime:90,  timeBonusPerSec:4, maxStartGroupSize:9,   perfectBonus:400},
-  hard:  {label:'むずかしい',colors:7, rows:9, cols:8, color:'var(--c5)', scoreMult:1.4, delayedMerges:3, firstTapBottomRow:true,  targetTime:150, timeBonusPerSec:8, maxStartGroupSize:9,   perfectBonus:800},
-  infinite:{label:'むげん', colors:7, rows:9, cols:8, color:'var(--c4)', scoreMult:1.4, delayedMerges:0, firstTapBottomRow:true,  targetTime:30,  timeBonusPerSec:0, maxStartGroupSize:9,   perfectBonus:0, isInfinite:true}
+  easy:  {label:'かんたん', colors:5, rows:6, cols:6, color:'var(--c1)', scoreMult:0.7, delayedMerges:0, firstTapBottomRow:false, targetTime:60,  timeBonusPerSec:2, maxStartGroupSize:null, perfectBonus:200, undoPenalty:30},
+  normal:{label:'ふつう',   colors:7, rows:6, cols:6, color:'var(--c2)', scoreMult:1,   delayedMerges:1, firstTapBottomRow:true,  targetTime:90,  timeBonusPerSec:4, maxStartGroupSize:9,   perfectBonus:400, undoPenalty:50},
+  hard:  {label:'むずかしい',colors:7, rows:9, cols:8, color:'var(--c5)', scoreMult:1.4, delayedMerges:3, firstTapBottomRow:true,  targetTime:150, timeBonusPerSec:8, maxStartGroupSize:9,   perfectBonus:800, undoPenalty:80},
+  infinite:{label:'むげん', colors:7, rows:9, cols:8, color:'var(--c4)', scoreMult:1.4, delayedMerges:0, firstTapBottomRow:true,  targetTime:30,  timeBonusPerSec:0, maxStartGroupSize:9,   perfectBonus:0, isInfinite:true, undoPenalty:0}
 };
 const STORAGE_KEY='puzzle-daily-records';
 const SYMBOLS=['●','■','▲','◆','★','✚','✖'];
@@ -524,6 +527,7 @@ let busy=false;
 let roundOver=true;      // ゲーム開始前はtrue(操作不可)
 let hintPenaltyPending=false; // ヒントを使った直後は、次に消した時のスコアが半分になる
 let firstMoveDone=false; // ふつう・むずかしいでは、最初の1回だけ一番下の行を消す必要がある
+let undoSnapshot=null; // 直前の1手を戻すためのスナップショット(1回分だけ)
 let records={};
 let calMonthOffset=0;
 
@@ -534,6 +538,7 @@ const msgEl=document.getElementById('msg');
 const diffLabelEl=document.getElementById('diffLabel');
 const giveupBtn=document.getElementById('giveupBtn');
 const hintBtn=document.getElementById('hintBtn');
+const undoBtn=document.getElementById('undoBtn');
 
 function pad(n){return n.toString().padStart(2,'0');}
 function dateKey(d){return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;}
@@ -894,6 +899,12 @@ async function onCellTap(e){
 
   busy=true;
   try{
+    const d=DIFFICULTIES[difficulty];
+    if(!d.isInfinite){
+      // 1手戻る用に、この手を打つ前の状態を保存しておく(1回分だけ)
+      undoSnapshot={grid:cloneGrid(grid),score,firstMoveDone};
+      undoBtn.disabled=false;
+    }
     firstMoveDone=true;
     let gained=Math.round(group.length*(group.length-1)*5*DIFFICULTIES[difficulty].scoreMult);
     let penalized=false;
@@ -915,7 +926,6 @@ async function onCellTap(e){
     for(const [gr,gc] of group) grid[gr][gc]=null;
     grid=applyGravityAndCompact(grid);
 
-    const d=DIFFICULTIES[difficulty];
     if(d.isInfinite){
       // むげんモードは上から新しい色を補充し続けるが、それでも消せる場所が無くなったらそこで終了
       refillColumns(grid);
@@ -947,7 +957,7 @@ async function onCellTap(e){
 
 async function finishRound(prefix,allowTimeBonus,isPerfect){
   roundOver=true;
-  giveupBtn.disabled=true;
+  updateGiveupButton();
   hintBtn.disabled=true;
   const elapsed=stopTimer();
   const d=DIFFICULTIES[difficulty];
@@ -1026,6 +1036,46 @@ async function giveUp(){
   if(roundOver||busy) return;
   await finishRound('ギブアップ!',false);
 }
+
+// ギブアップ/新しいゲームを始める、を1つのボタンにまとめて、状態に応じて見た目と動作を切り替える
+function updateGiveupButton(){
+  if(roundOver){
+    giveupBtn.textContent='新しいゲームを始める';
+  }else{
+    giveupBtn.textContent='ギブアップ';
+  }
+  giveupBtn.disabled=false;
+}
+function onGiveupBtnClick(){
+  if(roundOver){ showDiffPopup(); }else{ giveUp(); }
+}
+
+// ---------- 1手戻る(使うとスコアが少し減る) ----------
+async function undoLastMove(){
+  if(!undoSnapshot||roundOver||busy) return;
+  busy=true;
+  try{
+    const d=DIFFICULTIES[difficulty];
+    const penalty=d.undoPenalty||0;
+    grid=cloneGrid(undoSnapshot.grid);
+    score=Math.max(0,score-penalty);
+    firstMoveDone=undoSnapshot.firstMoveDone;
+    undoSnapshot=null;
+    undoBtn.disabled=true;
+    render();
+    msgEl.textContent = penalty>0 ? `1手戻したよ(スコアが${penalty}点減ったよ)` : '1手戻したよ';
+    setTimeout(()=>{
+      if(!roundOver && !busy){
+        msgEl.textContent = (DIFFICULTIES[difficulty].firstTapBottomRow && !firstMoveDone)
+          ? 'さいしょは、一番下の行をタップしてね'
+          : '同じ色を3つ以上つなげてタップしてね';
+      }
+    },2200);
+  }finally{
+    busy=false;
+  }
+}
+undoBtn.addEventListener('click',undoLastMove);
 
 // ---------- ヒント(使うと次に消した時のスコアが半分になる) ----------
 async function showHint(){
@@ -1211,8 +1261,12 @@ function startGame(diff){
   busy=false;
   hintPenaltyPending=false;
   firstMoveDone=false;
-  giveupBtn.disabled=false;
+  undoSnapshot=null;
+  updateGiveupButton();
   hintBtn.disabled=false;
+  undoBtn.disabled=true;
+  undoBtn.style.display = d.isInfinite ? 'none' : 'block'; // むげんモードでは使わない
+  document.getElementById('actionRow').classList.toggle('no-undo', d.isInfinite);
   document.getElementById('timeLabel').textContent = d.isInfinite ? 'のこり時間' : '経過時間';
   msgEl.textContent = DIFFICULTIES[diff].firstTapBottomRow
     ? 'さいしょは、一番下の行をタップしてね'
@@ -1229,7 +1283,7 @@ function startGame(diff){
 async function onInfiniteTimeUp(){
   if(roundOver) return;
   roundOver=true;
-  giveupBtn.disabled=true;
+  updateGiveupButton();
   hintBtn.disabled=true;
   const d=DIFFICULTIES[difficulty];
   const finalScore=score;
@@ -1245,7 +1299,7 @@ async function onInfiniteTimeUp(){
 async function finishInfiniteStuck(){
   if(roundOver) return;
   roundOver=true;
-  giveupBtn.disabled=true;
+  updateGiveupButton();
   hintBtn.disabled=true;
   const elapsed=stopTimer(); // カウントダウンを止めて、その時点までの経過秒数を取得
   const finalScore=score;
@@ -1369,8 +1423,7 @@ document.getElementById('diffOverlay').addEventListener('click',(e)=>{
   if(!btn) return;
   startGame(btn.dataset.d);
 });
-document.getElementById('newGameBtn').addEventListener('click',showDiffPopup);
-giveupBtn.addEventListener('click',giveUp);
+giveupBtn.addEventListener('click',onGiveupBtnClick);
 hintBtn.addEventListener('click',showHint);
 document.getElementById('resultDemoBtn').addEventListener('click',autoSolveDemo);
 document.getElementById('resultNewGameBtn').addEventListener('click',()=>{
@@ -1419,6 +1472,7 @@ function renderCalendar(){
     const key=`${y}-${pad(m+1)}-${pad(day)}`;
     const el=document.createElement('div');
     el.className='cal-day'+(key===todayKey?' today':'');
+    el.dataset.key=key;
     const num=document.createElement('div');
     num.textContent=day;
     el.appendChild(num);
@@ -1438,18 +1492,52 @@ function renderCalendar(){
     }
     calDays.appendChild(el);
   }
+
+  // 自分の記録が無い日でも、他の人が遊んだ日ならマークする(Supabase)
+  fetchAndMarkSharedDays(y,m,daysInMonth);
+}
+
+// その月の中で、誰かしらスコアを送ってる日を調べて、まだ印の無い日にうっすら印をつける
+async function fetchAndMarkSharedDays(y,m,daysInMonth){
+  const startDate=`${y}-${pad(m+1)}-01`;
+  const endDate=`${y}-${pad(m+1)}-${pad(daysInMonth)}`;
+  try{
+    const url=`${SUPABASE_URL}scores?play_date=gte.${startDate}&play_date=lte.${endDate}&select=play_date`;
+    const res=await fetchWithTimeout(url,{headers:{'apikey':SUPABASE_KEY}},6000);
+    if(!res.ok) return;
+    const rows=await res.json();
+    const activeDates=new Set(rows.map(r=>r.play_date));
+    activeDates.forEach(dateStr=>{
+      if(records[dateStr]) return; // 自分の記録がある日はもう印がついてる
+      const cell=calDays.querySelector(`.cal-day[data-key="${dateStr}"]`);
+      if(!cell || cell.classList.contains('blank')) return;
+      const dots=document.createElement('div');
+      dots.className='dots';
+      const dot=document.createElement('div');
+      dot.className='dot dot-shared';
+      dots.appendChild(dot);
+      cell.appendChild(dots);
+      cell.style.cursor='pointer';
+      cell.addEventListener('click',()=>showDayDetail(dateStr));
+    });
+  }catch(e){
+    console.error('その月のみんなの記録取得でエラーが発生しました',e);
+  }
 }
 
 function showDayDetail(key){
   const rec=records[key];
-  if(!rec) return;
   let html=`<b>${key}</b><br>`;
-  Object.keys(DIFFICULTIES).forEach(diff=>{
-    if(rec[diff]){
-      const r=rec[diff];
-      html+=`${DIFFICULTIES[diff].label}: ベストスコア ${r.bestScore}(${fmtTime(r.bestTime)})・プレイ ${r.plays}回<br>`;
-    }
-  });
+  if(rec){
+    Object.keys(DIFFICULTIES).forEach(diff=>{
+      if(rec[diff]){
+        const r=rec[diff];
+        html+=`${DIFFICULTIES[diff].label}: ベストスコア ${r.bestScore}(${fmtTime(r.bestTime)})・プレイ ${r.plays}回<br>`;
+      }
+    });
+  }else{
+    html+=`<span style="color:var(--ink-soft);">この日のあなたの記録はまだ無いよ</span><br>`;
+  }
   html+=`<div id="dayRankingLoading" class="day-loading">🏆 みんなのランキングを読み込み中…</div>`;
   dayDetail.innerHTML=html;
   dayDetail.style.display='block';
