@@ -328,9 +328,9 @@
 
 <script>
 const DIFFICULTIES={
-  easy:  {label:'かんたん', colors:5, rows:6, cols:6, color:'var(--c1)', scoreMult:0.7, delayedMerges:0, firstTapBottomRow:false, targetTime:60,  timeBonusPerSec:2},
-  normal:{label:'ふつう',   colors:7, rows:6, cols:6, color:'var(--c2)', scoreMult:1,   delayedMerges:1, firstTapBottomRow:true,  targetTime:90,  timeBonusPerSec:3},
-  hard:  {label:'むずかしい',colors:7, rows:9, cols:8, color:'var(--c5)', scoreMult:1.4, delayedMerges:3, firstTapBottomRow:true,  targetTime:150, timeBonusPerSec:4}
+  easy:  {label:'かんたん', colors:5, rows:6, cols:6, color:'var(--c1)', scoreMult:0.7, delayedMerges:0, firstTapBottomRow:false, targetTime:60,  timeBonusPerSec:2, maxStartGroupSize:null},
+  normal:{label:'ふつう',   colors:7, rows:6, cols:6, color:'var(--c2)', scoreMult:1,   delayedMerges:1, firstTapBottomRow:true,  targetTime:90,  timeBonusPerSec:3, maxStartGroupSize:9},
+  hard:  {label:'むずかしい',colors:7, rows:9, cols:8, color:'var(--c5)', scoreMult:1.4, delayedMerges:3, firstTapBottomRow:true,  targetTime:150, timeBonusPerSec:4, maxStartGroupSize:9}
 };
 const STORAGE_KEY='puzzle-daily-records';
 const SYMBOLS=['●','■','▲','◆','★','✚','✖'];
@@ -543,14 +543,41 @@ function injectDelayedMerge(grid,count){
   return injected;
 }
 
+// スタート時点で同じ色がmaxSize個より多く繋がっていたら、超過分だけ周りと被らない色に塗り直す
+function capGroupSizes(grid,maxSize){
+  let iterations=0;
+  while(iterations<30){
+    iterations++;
+    const groups=allGroups(grid);
+    const big=groups.find(g=>g.length>maxSize);
+    if(!big) break;
+    const excess=big.slice(maxSize);
+    const boundaryColors=new Set();
+    for(const [r,c] of excess){
+      for(const [nr,nc] of neighbors(r,c)){
+        if(nr>=0&&nr<ROWS&&nc>=0&&nc<COLS && grid[nr][nc]!==null && !excess.some(([er,ec])=>er===nr&&ec===nc)){
+          boundaryColors.add(grid[nr][nc]);
+        }
+      }
+    }
+    const options=[];
+    for(let k=0;k<COLORS;k++) if(!boundaryColors.has(k)) options.push(k);
+    const newColor = options.length ? options[Math.floor(Math.random()*options.length)] : randColor();
+    excess.forEach(([r,c])=>{ grid[r][c]=newColor; });
+  }
+  return grid;
+}
+
 function makeGrid(){
-  const GEN_RETRIES=90, SOLVE_ATTEMPTS=80;
+  const GEN_RETRIES=200, SOLVE_ATTEMPTS=40;
   const d=DIFFICULTIES[difficulty]||{};
   const delayedCount = d.delayedMerges || 0;
   const requireFirstBottom = !!d.firstTapBottomRow;
+  const maxStart = d.maxStartGroupSize || null;
   for(let i=0;i<GEN_RETRIES;i++){
-    const g=tileBoard();
+    let g=tileBoard();
     if(delayedCount>0) injectDelayedMerge(g,delayedCount);
+    if(maxStart) g=capGroupSizes(g,maxStart);
     // 実際のプレイと同じ「最初の1手は一番下の行」ルールの下で、全消しできることを検証する
     if(trySolveFull(g,SOLVE_ATTEMPTS,requireFirstBottom)) return g;
   }
