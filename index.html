@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="app-version" content="1.4.1">
+<meta name="app-version" content="1.4.2">
 <title>いろあわせパズル</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
@@ -623,7 +623,7 @@ const SYMBOLS=['●','■','▲','◆','★','✚','✖'];
 
 // ---------- みんなのランキング(Supabase) ----------
 // ※ バージョンを上げる時は、この値と<head>内のapp-versionメタタグの両方を書き換えること
-const APP_VERSION='1.4.1';
+const APP_VERSION='1.4.2';
 
 const SUPABASE_URL='https://jhrwpwpzxgxlvbartvqr.supabase.co/rest/v1/';
 const SUPABASE_KEY='sb_publishable_AaiMwnPXCL0oCfvQRqi9wA_x3Bl33da';
@@ -1784,8 +1784,8 @@ function openCalendar(){
   calMonthOffset=0;
   renderCalendar();
   calOverlay.classList.add('show');
-  const todayKey=dateKey(new Date());
-  if(records[todayKey]) showDayDetail(todayKey);
+  // 自分の記録が無くても、今日はとりあえず開いて、みんなの記録があれば自動で出す
+  showDayDetail(dateKey(new Date()));
 }
 document.getElementById('openCal').addEventListener('click',openCalendar);
 document.getElementById('openCalFromDiff').addEventListener('click',openCalendar);
