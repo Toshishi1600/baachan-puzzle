@@ -273,7 +273,7 @@
       <span class="beginner-badge">はじめての人はこちらから</span>
     </button>
     <button class="diff-choice" data-d="normal"><span class="name">ふつう</span><span class="desc">7色・6×6マス・最初は一番下の行から</span></button>
-    <button class="diff-choice" data-d="hard"><span class="name">むずかしい</span><span class="desc">7色・8×10マス・最初は一番下の行から</span></button>
+    <button class="diff-choice" data-d="hard"><span class="name">むずかしい</span><span class="desc">7色・8×9マス・最初は一番下の行から</span></button>
   </div>
 </div>
 
@@ -330,7 +330,7 @@
 const DIFFICULTIES={
   easy:  {label:'かんたん', colors:5, rows:6, cols:6, color:'var(--c1)', scoreMult:0.7, delayedMerges:0, firstTapBottomRow:false, targetTime:60,  timeBonusPerSec:2},
   normal:{label:'ふつう',   colors:7, rows:6, cols:6, color:'var(--c2)', scoreMult:1,   delayedMerges:1, firstTapBottomRow:true,  targetTime:90,  timeBonusPerSec:3},
-  hard:  {label:'むずかしい',colors:7, rows:10, cols:8, color:'var(--c5)', scoreMult:1.4, delayedMerges:3, firstTapBottomRow:true,  targetTime:150, timeBonusPerSec:4}
+  hard:  {label:'むずかしい',colors:7, rows:9, cols:8, color:'var(--c5)', scoreMult:1.4, delayedMerges:3, firstTapBottomRow:true,  targetTime:150, timeBonusPerSec:4}
 };
 const STORAGE_KEY='puzzle-daily-records';
 const SYMBOLS=['●','■','▲','◆','★','✚','✖'];
