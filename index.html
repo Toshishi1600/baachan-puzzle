@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="app-version" content="1.3.3">
 <title>いろあわせパズル</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
@@ -348,7 +349,7 @@
     <button class="diff-choice" data-d="hard"><span class="name">むずかしい</span><span class="desc">7色・8×9マス・最初は一番下の行から</span></button>
     <button class="diff-choice" data-d="infinite"><span class="name">♾️ むげん</span><span class="desc">30秒間で何個消せるかチャレンジ・上から無限に降ってくる</span></button>
     <div class="ranking-section" id="rankingSection"></div>
-    <div class="version-tag">v1.3.3</div>
+    <div class="version-tag" id="versionTag"></div>
   </div>
 </div>
 
@@ -438,6 +439,9 @@ const STORAGE_KEY='puzzle-daily-records';
 const SYMBOLS=['●','■','▲','◆','★','✚','✖'];
 
 // ---------- みんなのランキング(Supabase) ----------
+// ※ バージョンを上げる時は、この値と<head>内のapp-versionメタタグの両方を書き換えること
+const APP_VERSION='1.3.3';
+
 const SUPABASE_URL='https://jhrwpwpzxgxlvbartvqr.supabase.co/rest/v1/';
 const SUPABASE_KEY='sb_publishable_AaiMwnPXCL0oCfvQRqi9wA_x3Bl33da';
 const NICKNAME_KEY='puzzle-nickname';
@@ -472,6 +476,22 @@ async function fetchWithTimeout(url,options,timeoutMs){
     return await fetch(url,{...options,signal:controller.signal});
   }finally{
     clearTimeout(timer);
+  }
+}
+
+// 起動時に、公開されている最新のファイルとバージョンを比べて、古ければ自動でリロードする
+async function checkForUpdate(){
+  try{
+    const url=location.href.split('#')[0].split('?')[0];
+    const res=await fetchWithTimeout(url+'?v='+Date.now(),{cache:'no-store'},4000);
+    if(!res.ok) return;
+    const text=await res.text();
+    const match=text.match(/<meta name="app-version" content="([^"]+)">/);
+    if(match && match[1] && match[1]!==APP_VERSION){
+      location.reload();
+    }
+  }catch(e){
+    console.error('更新チェックに失敗しました',e);
   }
 }
 
@@ -1592,6 +1612,8 @@ document.getElementById('nextMonth').addEventListener('click',()=>{calMonthOffse
 
 // ---------- init ----------
 (async function init(){
+  document.getElementById('versionTag').textContent='v'+APP_VERSION;
+  await checkForUpdate(); // 古いバージョンならここでリロードされ、以降の処理は行われない
   todayLabel();
   await loadRecords();
   let seen=null;
