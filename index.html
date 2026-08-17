@@ -188,6 +188,7 @@
     border:2px solid transparent;
   }
   .ranking-row-you{border-color:var(--shu);background:#fff6f1;}
+  .ranking-sep{text-align:center;color:var(--ink-soft);letter-spacing:2px;margin:6px 0;font-size:14px;}
   .you-badge{
     display:inline-block;font-size:11px;background:var(--shu);color:#fff;
     padding:2px 8px;border-radius:999px;margin-left:6px;font-weight:700;vertical-align:middle;
@@ -196,6 +197,7 @@
   .ranking-name{flex:1;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .ranking-score{font-weight:900;font-variant-numeric:tabular-nums;}
   .day-ranking-line{font-size:13px;margin-top:6px;line-height:1.6;}
+  .day-loading{font-size:13px;margin-top:8px;color:var(--ink-soft);}
   .tutorial-body{text-align:left;margin-bottom:20px;}
   .tutorial-body p{font-size:16px;line-height:1.8;margin:0 0 14px;color:var(--ink);}
   .tutorial-body b{color:var(--shu);}
@@ -339,7 +341,7 @@
     <button class="diff-choice" data-d="hard"><span class="name">むずかしい</span><span class="desc">7色・8×9マス・最初は一番下の行から</span></button>
     <button class="diff-choice" data-d="infinite"><span class="name">♾️ むげん</span><span class="desc">30秒間で何個消せるかチャレンジ・上から無限に降ってくる</span></button>
     <div class="ranking-section" id="rankingSection"></div>
-    <div class="version-tag">v1.1.4</div>
+    <div class="version-tag">v1.2.0</div>
   </div>
 </div>
 
@@ -497,6 +499,17 @@ async function supabaseFetchTop(playDate,diff,limit){
     if(!res.ok) return [];
     const rows=await res.json();
     return dedupeTopByUser(rows,limit);
+  }catch(e){ console.error('ランキング取得に失敗しました',e); return []; }
+}
+
+// 自分の順位も分かるように、その日の全員分(重複排除済み)を取得する
+async function supabaseFetchFullBoard(playDate,diff){
+  try{
+    const url=`${SUPABASE_URL}scores?play_date=eq.${playDate}&difficulty=eq.${diff}&select=nickname,score,time_sec,user_id&order=score.desc&limit=300`;
+    const res=await fetchWithTimeout(url,{headers:{'apikey':SUPABASE_KEY}},6000);
+    if(!res.ok) return [];
+    const rows=await res.json();
+    return dedupeTopByUser(rows,300);
   }catch(e){ console.error('ランキング取得に失敗しました',e); return []; }
 }
 
@@ -1301,20 +1314,30 @@ async function showTodayRanking(){
   listEl.innerHTML='<div style="text-align:center;color:var(--ink-soft);">読み込み中…</div>';
   document.getElementById('rankingViewOverlay').classList.add('show');
   try{
-    const rows=await supabaseFetchTop(dateKey(new Date()),difficulty,7);
-    if(!rows.length){
+    const fullList=await supabaseFetchFullBoard(dateKey(new Date()),difficulty);
+    if(!fullList.length){
       listEl.innerHTML='<div style="text-align:center;color:var(--ink-soft);">まだ今日の記録がないみたい</div>';
       return;
     }
-    listEl.innerHTML=rows.map((r,i)=>{
+    const topRows=fullList.slice(0,7);
+    const rowHtml=(r,rank)=>{
       const isYou=r.user_id && r.user_id===getUserId();
       return `
       <div class="ranking-row${isYou?' ranking-row-you':''}">
-        <span class="ranking-rank">${i+1}位</span>
+        <span class="ranking-rank">${rank}位</span>
         <span class="ranking-name">${escapeHtml(r.nickname)}${isYou?' <span class="you-badge">あなた</span>':''}</span>
         <span class="ranking-score">${r.score}点</span>
       </div>`;
-    }).join('');
+    };
+    let html=topRows.map((r,i)=>rowHtml(r,i+1)).join('');
+
+    // 自分が上位7位より下にいたら、点線で区切って自分の順位も出す
+    const myIndex=fullList.findIndex(r=>r.user_id && r.user_id===getUserId());
+    if(myIndex>=7){
+      html+='<div class="ranking-sep">┈┈┈┈┈┈┈┈┈┈┈┈┈┈</div>';
+      html+=rowHtml(fullList[myIndex],myIndex+1);
+    }
+    listEl.innerHTML=html;
   }catch(e){
     console.error('ランキング表示でエラーが発生しました',e);
     listEl.innerHTML='<div style="text-align:center;color:var(--ink-soft);">読み込みに失敗したみたい。もう一度試してみてね</div>';
@@ -1427,6 +1450,7 @@ function showDayDetail(key){
       html+=`${DIFFICULTIES[diff].label}: ベストスコア ${r.bestScore}(${fmtTime(r.bestTime)})・プレイ ${r.plays}回<br>`;
     }
   });
+  html+=`<div id="dayRankingLoading" class="day-loading">🏆 みんなのランキングを読み込み中…</div>`;
   dayDetail.innerHTML=html;
   dayDetail.style.display='block';
   fetchAndAppendDayRanking(key);
@@ -1446,11 +1470,15 @@ async function fetchAndAppendDayRanking(key){
         sections.push(`<div class="day-ranking-line"><b>${DIFFICULTIES[diff].label}トップ3:</b> ${list}</div>`);
       }
     }
+    const loadingEl=document.getElementById('dayRankingLoading');
+    if(loadingEl) loadingEl.remove();
     if(sections.length){
       dayDetail.insertAdjacentHTML('beforeend',
         `<hr style="margin:10px 0;border:none;border-top:1px solid var(--paper-deep);">`+sections.join(''));
     }
   }catch(e){
+    const loadingEl=document.getElementById('dayRankingLoading');
+    if(loadingEl) loadingEl.remove();
     console.error('その日のランキング取得でエラーが発生しました',e);
   }
 }
