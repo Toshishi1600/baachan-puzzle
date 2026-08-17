@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="app-version" content="1.3.3">
+<meta name="app-version" content="1.4.1">
 <title>いろあわせパズル</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
@@ -156,8 +156,10 @@
   }
   .card-cal-btn-inline:active{transform:translateY(2px);}
   .diff-card h2{margin:0 0 4px;font-size:29px;font-weight:900;}
-  .diff-card p{margin:0;font-size:16px;color:var(--ink-soft);}
+  .diff-card p{margin:0;font-size:15px;color:var(--ink-soft);}
   .diff-subrow{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;}
+  .diff-subrow p{flex:1 1 auto;min-width:0;}
+  .diff-subrow .card-cal-btn-inline{flex-shrink:0;}
   .diff-choice{
     width:100%;background:#fff;border:2px solid transparent;border-radius:16px;
     padding:16px;margin-bottom:8px;font-family:inherit;cursor:pointer;
@@ -171,6 +173,13 @@
     font-size:13px;font-weight:700;padding:4px 12px;border-radius:999px;
   }
   .version-tag{margin-top:8px;text-align:center;font-size:12px;color:var(--ink-soft);opacity:.6;}
+  .lang-row{display:flex;justify-content:center;margin-bottom:12px;}
+  .lang-toggle-btn{
+    background:#fff;border:2px solid var(--paper-deep);border-radius:999px;
+    padding:8px 18px;font-size:14px;font-weight:700;color:var(--ink-soft);
+    font-family:inherit;cursor:pointer;
+  }
+  .lang-toggle-btn:active{transform:translateY(2px);}
 
   .ranking-section{margin-top:8px;padding-top:10px;border-top:1px solid var(--paper-deep);}
   .ranking-join-btn{
@@ -298,14 +307,14 @@
 <body>
 <div class="app">
   <header>
-    <h1>いろあわせパズル</h1>
+    <h1 id="appTitleText">いろあわせパズル</h1>
     <div class="date" id="todayLabel"></div>
     <div class="diff-label" id="diffLabel"></div>
   </header>
 
   <div class="statbar">
     <div class="score-box">
-      <div class="score-label">スコア</div>
+      <div class="score-label" id="scoreLabelText">スコア</div>
       <div class="score-value" id="scoreValue">0</div>
     </div>
     <div class="time-box">
@@ -335,19 +344,22 @@
 
 <div class="overlay" id="diffOverlay">
   <div class="diff-card">
-    <h2>難易度をえらんでね</h2>
+    <h2 id="diffTitleText">難易度をえらんでね</h2>
+    <div class="lang-row">
+      <button class="lang-toggle-btn" id="langToggleBtn">🌐 English</button>
+    </div>
     <div class="diff-subrow">
-      <p>あとから画面下のボタンでも選び直せます</p>
+      <p id="diffSubtitleText">あとから下のボタンでも選べます</p>
       <button class="card-cal-btn-inline" id="openCalFromDiff" aria-label="記録を見る">📅</button>
     </div>
     <button class="diff-choice" data-d="easy">
-      <span class="name">かんたん</span>
-      <span class="desc">5色・6×6マス</span>
-      <span class="beginner-badge">はじめての人はこちらから</span>
+      <span class="name"></span>
+      <span class="desc"></span>
+      <span class="beginner-badge"></span>
     </button>
-    <button class="diff-choice" data-d="normal"><span class="name">ふつう</span><span class="desc">7色・6×6マス・最初は一番下の行から</span></button>
-    <button class="diff-choice" data-d="hard"><span class="name">むずかしい</span><span class="desc">7色・8×9マス・最初は一番下の行から</span></button>
-    <button class="diff-choice" data-d="infinite"><span class="name">♾️ むげん</span><span class="desc">30秒間で何個消せるかチャレンジ・上から無限に降ってくる</span></button>
+    <button class="diff-choice" data-d="normal"><span class="name"></span><span class="desc"></span></button>
+    <button class="diff-choice" data-d="hard"><span class="name"></span><span class="desc"></span></button>
+    <button class="diff-choice" data-d="infinite"><span class="name"></span><span class="desc"></span></button>
     <div class="ranking-section" id="rankingSection"></div>
     <div class="version-tag" id="versionTag"></div>
   </div>
@@ -355,8 +367,8 @@
 
 <div class="overlay" id="nicknameOverlay">
   <div class="diff-card">
-    <h2>ニックネームをきめてね</h2>
-    <p>ランキングに表示される名前だよ(あとから変更もできます)</p>
+    <h2 id="nicknameTitleText">ニックネームをきめてね</h2>
+    <p id="nicknameSubtitleText">ランキングに表示される名前だよ(あとから変更もできます)</p>
     <input type="text" id="nicknameInput" maxlength="10" placeholder="例: トシシ" class="nickname-input">
     <button class="newgame" id="nicknameConfirmBtn" style="width:100%;margin-top:14px;">けってい</button>
     <button class="result-close" id="nicknameCancelBtn" style="width:100%;">やめる</button>
@@ -375,12 +387,12 @@
 
 <div class="overlay" id="tutorialOverlay">
   <div class="diff-card">
-    <h2>あそびかた</h2>
+    <h2 id="tutorialTitleText">あそびかた</h2>
     <div class="tutorial-body">
-      <p>🟢 <b>同じ色が3つ以上つながっているところ</b>をタップすると消えるよ</p>
-      <p>🔴 <b>ふつう・むずかしい</b>では、さいしょの1回だけ<b>一番下の行</b>をタップしてね</p>
-      <p>💡 こまったら「ヒント」ボタンを押すと、消せるところを教えてくれるよ(次に消すスコアは半分になるよ)</p>
-      <p>↩️ 「1手戻る」を押すと直前の1手をやり直せるけど、少しスコアが減るよ</p>
+      <p id="tutorial1Text">🟢 <b>同じ色が3つ以上つながっているところ</b>をタップすると消えるよ</p>
+      <p id="tutorial2Text">🔴 <b>ふつう・むずかしい</b>では、さいしょの1回だけ<b>一番下の行</b>をタップしてね</p>
+      <p id="tutorial3Text">💡 こまったら「ヒント」ボタンを押すと、消せるところを教えてくれるよ(次に消すスコアは半分になるよ)</p>
+      <p id="tutorial4Text">↩️ 「1手戻る」を押すと直前の1手をやり直せるけど、少しスコアが減るよ</p>
     </div>
     <button class="newgame" id="tutorialCloseBtn" style="width:100%;">わかった!あそぶ</button>
   </div>
@@ -395,11 +407,11 @@
     </div>
     <div class="result-stats">
       <div class="box">
-        <div class="label">スコア</div>
+        <div class="label" id="resultScoreLabelText">スコア</div>
         <div class="value" id="resultScore">0</div>
       </div>
       <div class="box">
-        <div class="label">時間</div>
+        <div class="label" id="resultTimeLabelText">時間</div>
         <div class="value" id="resultTime">00:00</div>
       </div>
     </div>
@@ -429,18 +441,189 @@
 </div>
 
 <script>
+// ---------- 言語(日本語/English) ----------
+const LANG_KEY='puzzle-lang';
+let lang='ja';
+try{ lang=localStorage.getItem(LANG_KEY)||'ja'; }catch(e){}
+
+const I18N={
+  ja:{
+    appTitle:'いろあわせパズル',
+    scoreLabel:'スコア', timeLabelElapsed:'経過時間', timeLabelRemaining:'のこり時間',
+    hintBtn:'ヒント', undoBtn:'↩️ 1手戻る', giveupBtnPlaying:'ギブアップ', giveupBtnIdle:'新しいゲームを始める',
+    msgDefault:'同じ色を3つ以上つなげてタップしてね',
+    msgChooseDifficulty:'難易度を選んでゲームを始めてね',
+    msgBottomFirst:'さいしょは、一番下の行をタップしてね',
+    msgNoMoves:'もう消せる場所がないみたい。ギブアップしてもいいよ',
+    msgNoBottomMoves:'一番下の行に消せるところが見当たらないみたい',
+    msgTapHighlighted:'光っているところをタップしてみてね(次に消すスコアは半分になるよ)',
+    msgHintPenalty:'ヒントを使った次だったから、スコアが半分になったよ',
+    msgInfiniteDefault:'どんどんタップして消していこう!',
+    msgUndoDone:'1手戻したよ(スコアが{penalty}点減ったよ)',
+    msgUndoDoneNoPenalty:'1手戻したよ',
+    msgProcessError:'うまく処理できませんでした。「新しいゲームを始める」を押してね',
+    msgResultLine:'{prefix} スコア {score}({parts})・時間 {time} でした',
+    msgResultLineSimple:'{prefix} スコア {score}・時間 {time} でした',
+    msgTimeUp:'タイムアップ! スコア {score} でした',
+    msgStuckOrGiveup:'{prefix} スコア {score} でした',
+    partBase:'きほん{score}', partSpeed:'はやさボーナス{v}', partPerfect:'パーフェクトボーナス{v}',
+
+    diffTitle:'難易度をえらんでね', diffSubtitle:'あとから下のボタンでも選べます',
+    diff_easy_name:'かんたん', diff_easy_desc:'{colors}色・{rows}×{cols}マス',
+    diff_normal_name:'ふつう', diff_normal_desc:'{colors}色・{rows}×{cols}マス・最初は一番下の行から',
+    diff_hard_name:'むずかしい', diff_hard_desc:'{colors}色・{rows}×{cols}マス・最初は一番下の行から',
+    diff_infinite_name:'♾️ むげん', diff_infinite_desc:'30秒間で何個消せるかチャレンジ・上から無限に降ってくる',
+    beginnerBadge:'はじめての人はこちらから',
+    diffSummary:'{name}({colors}色・{rows}×{cols})',
+
+    tutorialTitle:'あそびかた',
+    tutorial1:'🟢 <b>同じ色が3つ以上つながっているところ</b>をタップすると消えるよ',
+    tutorial2:'🔴 <b>ふつう・むずかしい</b>では、さいしょの1回だけ<b>一番下の行</b>をタップしてね',
+    tutorial3:'💡 こまったら「ヒント」ボタンを押すと、消せるところを教えてくれるよ(次に消すスコアは半分になるよ)',
+    tutorial4:'↩️ 「1手戻る」を押すと直前の1手をやり直せるけど、少しスコアが減るよ',
+    tutorialClose:'わかった!あそぶ',
+
+    nicknameTitle:'ニックネームをきめてね', nicknameSubtitle:'ランキングに表示される名前だよ(あとから変更もできます)',
+    nicknamePlaceholder:'例: トシシ', nicknameConfirm:'けってい', nicknameCancel:'やめる',
+    nicknameEmptyAlert:'ニックネームを入力してね',
+
+    rankingJoin:'🏆 みんなのランキングに参加する',
+    rankingStatus:'🏆 <b>{name}</b>さんとして参加中',
+    rankingChangeNickname:'ニックネーム変更', rankingLeave:'参加をやめる',
+    rankingLeaveConfirm:'ランキング参加をやめますか?',
+    rankingViewToday:'今日の「{label}」ランキング', rankingViewGeneric:'今日のランキング',
+    rankingLoading:'読み込み中…', rankingNoData:'まだ今日の記録がないみたい',
+    rankingLoadError:'読み込みに失敗したみたい。もう一度試してみてね',
+    youBadge:'あなた', positionSuffix:'位', pointsSuffix:'点',
+
+    resultTitlePerfect:'パーフェクト!!', resultTitleCleared:'おつかれさま!',
+    resultTitleGiveup:'ギブアップ!', resultTitleTimeUp:'タイムアップ!',
+    resultTitleStuck:'おつかれさま!全部消せなくなっちゃったよ!',
+    resultScoreLabel:'スコア', resultTimeLabel:'時間',
+    resultHighScore:'✨ 本日のハイスコア更新! ✨',
+    resultDemoBtn:'お手本を見る',
+    resultShareBtn:'🏆 スコアを共有する', resultRankingBtn:'📊 今日のランキングを見る',
+    resultNewGameBtn:'新しいゲームを始める', resultCloseBtn:'盤面を見る',
+
+    calEmptyNote:'まだ記録がありません', calClose:'とじる',
+    dayDetailNoRecord:'この日のあなたの記録はまだ無いよ',
+    dayRankingLoading:'🏆 みんなのランキングを読み込み中…',
+    dayRankingTop3:'{label}トップ3:',
+    dayDetailLine:'{label}: ベストスコア {score}({time})・プレイ {plays}回',
+
+    demoStop:'⏸ ストップ', demoPlay:'▶ さいせい', demoReplay:'🔁 もう一度見る',
+    demoThinking:'お手本を考え中…', demoThinkingRestart:'最初の盤面から、お手本を考え中…',
+    demoPlayingRestart:'最初の盤面から、お手本を再生しています…(記録済みのスコアは変わりません)',
+    demoPlaying:'お手本を再生しています…(記録済みのスコアは変わりません)',
+    demoPlayingPartial:'お手本を再生しています(ここからは全部は消せなかったみたい)',
+    demoDonePerfect:'お手本の通りで、全部消しきれました!記録済みのスコアはさっきのままだよ',
+    demoDonePartial:'お手本はここまで。記録済みのスコアはさっきのままだよ',
+
+    shareText:'いろあわせパズル「{label}」でスコア{score}・タイム{time}を出したよ!挑戦してみてね',
+    shareCopiedAlert:'スコアとリンクをコピーしたよ。LINEなどに貼り付けて送ってね',
+    sharePromptText:'このテキストをコピーして送ってね',
+    langToggle:'🌐 English'
+  },
+  en:{
+    appTitle:'Color Match Puzzle',
+    scoreLabel:'Score', timeLabelElapsed:'Time', timeLabelRemaining:'Time Left',
+    hintBtn:'Hint', undoBtn:'↩️ Undo', giveupBtnPlaying:'Give Up', giveupBtnIdle:'Start New Game',
+    msgDefault:'Tap 3+ matching colors to clear them',
+    msgChooseDifficulty:'Choose a difficulty to start the game',
+    msgBottomFirst:'First, tap the bottom row',
+    msgNoMoves:"No more moves available. Feel free to give up",
+    msgNoBottomMoves:'No clearable tiles found in the bottom row',
+    msgTapHighlighted:'Tap the glowing tiles (next clear will be worth half score)',
+    msgHintPenalty:'Score was halved since you used a hint',
+    msgInfiniteDefault:'Keep tapping to clear as many as you can!',
+    msgUndoDone:'Move undone (score reduced by {penalty} pts)',
+    msgUndoDoneNoPenalty:'Move undone',
+    msgProcessError:'Something went wrong. Please tap "Start New Game"',
+    msgResultLine:'{prefix} Score {score} ({parts})・Time {time}',
+    msgResultLineSimple:'{prefix} Score {score}・Time {time}',
+    msgTimeUp:"Time's up! Score {score}",
+    msgStuckOrGiveup:'{prefix} Score {score}',
+    partBase:'Base {score}', partSpeed:'Speed Bonus {v}', partPerfect:'Perfect Bonus {v}',
+
+    diffTitle:'Choose a difficulty', diffSubtitle:'Change this anytime below',
+    diff_easy_name:'Easy', diff_easy_desc:'{colors} colors・{rows}×{cols} tiles',
+    diff_normal_name:'Normal', diff_normal_desc:'{colors} colors・{rows}×{cols} tiles・start from the bottom row',
+    diff_hard_name:'Hard', diff_hard_desc:'{colors} colors・{rows}×{cols} tiles・start from the bottom row',
+    diff_infinite_name:'♾️ Infinite', diff_infinite_desc:'Clear as many as you can in 30 seconds・tiles fall endlessly from above',
+    beginnerBadge:'New here? Start with this',
+    diffSummary:'{name} ({colors} colors・{rows}×{cols})',
+
+    tutorialTitle:'How to Play',
+    tutorial1:'🟢 Tap where <b>3 or more matching colors connect</b> to clear them',
+    tutorial2:'🔴 On <b>Normal/Hard</b>, your very first tap must be on the <b>bottom row</b>',
+    tutorial3:'💡 Stuck? Tap "Hint" to see a clearable spot (halves your next score)',
+    tutorial4:'↩️ "Undo" lets you redo your last move, but costs some score',
+    tutorialClose:"Got it, let's play!",
+
+    nicknameTitle:'Choose a nickname', nicknameSubtitle:"This name shows on the leaderboard (you can change it later)",
+    nicknamePlaceholder:'e.g. Alex', nicknameConfirm:'OK', nicknameCancel:'Cancel',
+    nicknameEmptyAlert:'Please enter a nickname',
+
+    rankingJoin:'🏆 Join the Leaderboard',
+    rankingStatus:'🏆 Playing as <b>{name}</b>',
+    rankingChangeNickname:'Change Nickname', rankingLeave:'Leave Leaderboard',
+    rankingLeaveConfirm:'Leave the leaderboard?',
+    rankingViewToday:"Today's {label} Leaderboard", rankingViewGeneric:"Today's Leaderboard",
+    rankingLoading:'Loading…', rankingNoData:'No records yet today',
+    rankingLoadError:'Failed to load. Please try again',
+    youBadge:'You', positionSuffix:'', pointsSuffix:' pts',
+
+    resultTitlePerfect:'Perfect!!', resultTitleCleared:'Well done!',
+    resultTitleGiveup:'Gave Up!', resultTitleTimeUp:"Time's Up!",
+    resultTitleStuck:"Well done! No more moves left!",
+    resultScoreLabel:'Score', resultTimeLabel:'Time',
+    resultHighScore:'✨ New Daily High Score! ✨',
+    resultDemoBtn:'Watch Solution',
+    resultShareBtn:'🏆 Share Score', resultRankingBtn:"📊 View Today's Leaderboard",
+    resultNewGameBtn:'Start New Game', resultCloseBtn:'View Board',
+
+    calEmptyNote:'No records yet', calClose:'Close',
+    dayDetailNoRecord:"You have no record for this day yet",
+    dayRankingLoading:"🏆 Loading everyone's rankings…",
+    dayRankingTop3:'{label} Top 3:',
+    dayDetailLine:'{label}: Best {score} ({time})・Played {plays}x',
+
+    demoStop:'⏸ Stop', demoPlay:'▶ Play', demoReplay:'🔁 Watch Again',
+    demoThinking:'Working out a solution…', demoThinkingRestart:'Working out a solution from the start…',
+    demoPlayingRestart:"Playing the solution from the start… (your recorded score won't change)",
+    demoPlaying:"Playing the solution… (your recorded score won't change)",
+    demoPlayingPartial:"Playing the best solution found (couldn't clear everything from here)",
+    demoDonePerfect:"All cleared, just like the solution! Your recorded score is unchanged",
+    demoDonePartial:"That's as far as the solution goes. Your recorded score is unchanged",
+
+    shareText:'I scored {score} in {time} playing "{label}" mode in Color Match Puzzle! Try to beat it!',
+    shareCopiedAlert:'Score and link copied! Paste it anywhere to share',
+    sharePromptText:'Copy this text to share',
+    langToggle:'🌐 日本語'
+  }
+};
+function t(key,vars){
+  let s=(I18N[lang]&&I18N[lang][key]!==undefined)?I18N[lang][key]:(I18N.ja[key]!==undefined?I18N.ja[key]:key);
+  if(vars) for(const k in vars) s=s.split('{'+k+'}').join(vars[k]);
+  return s;
+}
+const CAL_DOW={ja:['日','月','火','水','木','金','土'],en:['S','M','T','W','T','F','S']};
+
 const DIFFICULTIES={
   easy:  {label:'かんたん', colors:5, rows:6, cols:6, color:'var(--c1)', scoreMult:0.7, delayedMerges:0, firstTapBottomRow:false, targetTime:60,  timeBonusPerSec:2, maxStartGroupSize:null, perfectBonus:200, undoPenalty:30},
   normal:{label:'ふつう',   colors:7, rows:6, cols:6, color:'var(--c2)', scoreMult:1,   delayedMerges:1, firstTapBottomRow:true,  targetTime:90,  timeBonusPerSec:4, maxStartGroupSize:9,   perfectBonus:400, undoPenalty:50},
   hard:  {label:'むずかしい',colors:7, rows:9, cols:8, color:'var(--c5)', scoreMult:1.4, delayedMerges:3, firstTapBottomRow:true,  targetTime:150, timeBonusPerSec:8, maxStartGroupSize:9,   perfectBonus:800, undoPenalty:80},
   infinite:{label:'むげん', colors:7, rows:9, cols:8, color:'var(--c4)', scoreMult:1.4, delayedMerges:0, firstTapBottomRow:true,  targetTime:30,  timeBonusPerSec:0, maxStartGroupSize:9,   perfectBonus:0, isInfinite:true, undoPenalty:0}
 };
+function diffName(key){ return t('diff_'+key+'_name'); }
+function diffDesc(key){ const d=DIFFICULTIES[key]; return t('diff_'+key+'_desc',{colors:d.colors,rows:d.rows,cols:d.cols}); }
+function diffSummary(key){ const d=DIFFICULTIES[key]; return t('diffSummary',{name:diffName(key),colors:d.colors,rows:d.rows,cols:d.cols}); }
 const STORAGE_KEY='puzzle-daily-records';
 const SYMBOLS=['●','■','▲','◆','★','✚','✖'];
 
 // ---------- みんなのランキング(Supabase) ----------
 // ※ バージョンを上げる時は、この値と<head>内のapp-versionメタタグの両方を書き換えること
-const APP_VERSION='1.3.3';
+const APP_VERSION='1.4.1';
 
 const SUPABASE_URL='https://jhrwpwpzxgxlvbartvqr.supabase.co/rest/v1/';
 const SUPABASE_KEY='sb_publishable_AaiMwnPXCL0oCfvQRqi9wA_x3Bl33da';
@@ -483,7 +666,11 @@ async function fetchWithTimeout(url,options,timeoutMs){
 async function checkForUpdate(){
   try{
     const url=location.href.split('#')[0].split('?')[0];
-    const res=await fetchWithTimeout(url+'?v='+Date.now(),{cache:'no-store'},4000);
+    // AbortSignal+cache:'no-store'の組み合わせが一部ブラウザで不具合を起こすことがあるため、
+    // ここではAbortControllerを使わず、Promise.raceだけでタイムアウトさせる
+    const fetchPromise=fetch(url+'?v='+Date.now(),{cache:'no-store'});
+    const timeoutPromise=new Promise((_,reject)=>setTimeout(()=>reject(new Error('timeout')),4000));
+    const res=await Promise.race([fetchPromise,timeoutPromise]);
     if(!res.ok) return;
     const text=await res.text();
     const match=text.match(/<meta name="app-version" content="([^"]+)">/);
@@ -571,8 +758,10 @@ function fmtTime(sec){return `${pad(Math.floor(sec/60))}:${pad(sec%60)}`;}
 
 function todayLabel(){
   const d=new Date();
-  const w=['日','月','火','水','木','金','土'][d.getDay()];
-  document.getElementById('todayLabel').textContent=`${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日(${w})`;
+  const text = lang==='en'
+    ? d.toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric',weekday:'short'})
+    : `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日(${CAL_DOW.ja[d.getDay()]})`;
+  document.getElementById('todayLabel').textContent=text;
 }
 
 // ---------- storage (スマホ内のブラウザに保存。ログイン不要) ----------
@@ -910,8 +1099,8 @@ async function onCellTap(e){
   if(DIFFICULTIES[difficulty].firstTapBottomRow && !firstMoveDone && r!==ROWS-1){
     e.currentTarget.classList.add('shake');
     setTimeout(()=>{ e.currentTarget && e.currentTarget.classList.remove('shake'); },300);
-    msgEl.textContent='さいしょは、一番下の行をタップしてね';
-    setTimeout(()=>{ if(!roundOver && !busy) msgEl.textContent='同じ色を3つ以上つなげてタップしてね'; },2200);
+    msgEl.textContent=t('msgBottomFirst');
+    setTimeout(()=>{ if(!roundOver && !busy) msgEl.textContent=t('msgDefault'); },2200);
     return;
   }
 
@@ -959,22 +1148,22 @@ async function onCellTap(e){
       if(!hasMove(grid)){
         await finishInfiniteStuck();
       }else if(penalized){
-        msgEl.textContent='ヒントを使った次だったから、スコアが半分になったよ';
-        setTimeout(()=>{ if(!roundOver) msgEl.textContent='どんどんタップして消していこう!'; },1500);
+        msgEl.textContent=t('msgHintPenalty');
+        setTimeout(()=>{ if(!roundOver) msgEl.textContent=t('msgInfiniteDefault'); },1500);
       }
     }else{
       render();
       if(!hasMove(grid)){
         const isPerfect = grid.every(row=>row.every(cell=>cell===null));
-        await finishRound(isPerfect ? 'パーフェクト!!' : 'おつかれさま!', true, isPerfect);
+        await finishRound(isPerfect ? t('resultTitlePerfect') : t('resultTitleCleared'), true, isPerfect);
       }else if(penalized){
-        msgEl.textContent='ヒントを使った次だったから、スコアが半分になったよ';
-        setTimeout(()=>{ if(!roundOver) msgEl.textContent='同じ色を3つ以上つなげてタップしてね'; },2200);
+        msgEl.textContent=t('msgHintPenalty');
+        setTimeout(()=>{ if(!roundOver) msgEl.textContent=t('msgDefault'); },2200);
       }
     }
   }catch(err){
     console.error('パズル処理でエラーが発生しました',err);
-    msgEl.textContent='うまく処理できませんでした。「新しいゲームを始める」を押してね';
+    msgEl.textContent=t('msgProcessError');
   }finally{
     busy=false;
   }
@@ -992,12 +1181,12 @@ async function finishRound(prefix,allowTimeBonus,isPerfect){
   const perfectBonus = isPerfect ? d.perfectBonus : 0;
   const finalScore = finalScoreBeforePerfect+perfectBonus;
 
-  const parts=[`きほん${score}`];
-  if(timeBonus>0) parts.push(`はやさボーナス${timeBonus}`);
-  if(perfectBonus>0) parts.push(`パーフェクトボーナス${perfectBonus}`);
+  const parts=[t('partBase',{score})];
+  if(timeBonus>0) parts.push(t('partSpeed',{v:timeBonus}));
+  if(perfectBonus>0) parts.push(t('partPerfect',{v:perfectBonus}));
   msgEl.textContent = parts.length>1
-    ? `${prefix} スコア ${finalScore}(${parts.join('+')})・時間 ${fmtTime(elapsed)} でした`
-    : `${prefix} スコア ${finalScore}・時間 ${fmtTime(elapsed)} でした`;
+    ? t('msgResultLine',{prefix,score:finalScore,parts:parts.join('+'),time:fmtTime(elapsed)})
+    : t('msgResultLineSimple',{prefix,score:finalScore,time:fmtTime(elapsed)});
   const isNewHighScore = await recordRound(finalScore,elapsed);
   // ランキング参加中なら、何か1つでも消せていればスコアを送信する(通信失敗しても無視)
   if(isRankingOptedIn() && finalScore>0){
@@ -1008,16 +1197,16 @@ async function finishRound(prefix,allowTimeBonus,isPerfect){
 
 function showResultPopup(prefix,finalScore,elapsedSec,baseScore,timeBonus,isPerfect,perfectBonus,isNewHighScore){
   document.getElementById('resultTitle').textContent=prefix;
-  document.getElementById('resultDiff').textContent=DIFFICULTIES[difficulty].label+`(${DIFFICULTIES[difficulty].colors}色・${DIFFICULTIES[difficulty].rows}×${DIFFICULTIES[difficulty].cols})`;
+  document.getElementById('resultDiff').textContent=diffSummary(difficulty);
   document.getElementById('resultScore').textContent=finalScore;
   document.getElementById('resultTime').textContent=fmtTime(elapsedSec);
   document.getElementById('resultHighScore').style.display = isNewHighScore ? 'block' : 'none';
   const breakdownEl=document.getElementById('resultBreakdown');
   const parts=[];
-  if(timeBonus>0) parts.push(`はやさボーナス${timeBonus}`);
-  if(perfectBonus>0) parts.push(`パーフェクトボーナス${perfectBonus}`);
+  if(timeBonus>0) parts.push(t('partSpeed',{v:timeBonus}));
+  if(perfectBonus>0) parts.push(t('partPerfect',{v:perfectBonus}));
   if(parts.length){
-    breakdownEl.textContent=`(きほん${baseScore} + ${parts.join(' + ')})`;
+    breakdownEl.textContent=`(${t('partBase',{score:baseScore})} + ${parts.join(' + ')})`;
     breakdownEl.style.display='block';
   }else{
     breakdownEl.style.display='none';
@@ -1025,7 +1214,7 @@ function showResultPopup(prefix,finalScore,elapsedSec,baseScore,timeBonus,isPerf
   const demoBtn=document.getElementById('resultDemoBtn');
   demoBtn.style.display='block';
   demoBtn.disabled=false;
-  demoBtn.textContent='お手本を見る';
+  demoBtn.textContent=t('resultDemoBtn');
   document.querySelector('#resultOverlay .result-card').classList.toggle('perfect',isPerfect);
   document.getElementById('resultOverlay').classList.add('show');
 }
@@ -1035,40 +1224,35 @@ function hideResultPopup(){
 
 // ---------- スコアの共有 ----------
 async function shareScore(){
-  const d=DIFFICULTIES[difficulty];
   const scoreText=document.getElementById('resultScore').textContent;
   const timeText=document.getElementById('resultTime').textContent;
-  const shareText=`いろあわせパズル「${d.label}」でスコア${scoreText}・タイム${timeText}を出したよ!挑戦してみてね`;
+  const shareText=t('shareText',{label:diffName(difficulty),score:scoreText,time:timeText});
   const url=location.href;
 
   if(navigator.share){
     try{
-      await navigator.share({title:'いろあわせパズル',text:shareText,url});
+      await navigator.share({title:t('appTitle'),text:shareText,url});
     }catch(e){ /* 共有シートをキャンセルした場合などは何もしない */ }
     return;
   }
   const fullText=`${shareText}\n${url}`;
   try{
     await navigator.clipboard.writeText(fullText);
-    alert('スコアとリンクをコピーしたよ。LINEなどに貼り付けて送ってね');
+    alert(t('shareCopiedAlert'));
   }catch(e){
-    prompt('このテキストをコピーして送ってね',fullText);
+    prompt(t('sharePromptText'),fullText);
   }
 }
 document.getElementById('resultShareBtn').addEventListener('click',shareScore);
 
 async function giveUp(){
   if(roundOver||busy) return;
-  await finishRound('ギブアップ!',false);
+  await finishRound(t('resultTitleGiveup'),false);
 }
 
 // ギブアップ/新しいゲームを始める、を1つのボタンにまとめて、状態に応じて見た目と動作を切り替える
 function updateGiveupButton(){
-  if(roundOver){
-    giveupBtn.textContent='新しいゲームを始める';
-  }else{
-    giveupBtn.textContent='ギブアップ';
-  }
+  giveupBtn.textContent = roundOver ? t('giveupBtnIdle') : t('giveupBtnPlaying');
   giveupBtn.disabled=false;
 }
 function onGiveupBtnClick(){
@@ -1088,12 +1272,12 @@ async function undoLastMove(){
     undoSnapshot=null;
     undoBtn.disabled=true;
     render();
-    msgEl.textContent = penalty>0 ? `1手戻したよ(スコアが${penalty}点減ったよ)` : '1手戻したよ';
+    msgEl.textContent = penalty>0 ? t('msgUndoDone',{penalty}) : t('msgUndoDoneNoPenalty');
     setTimeout(()=>{
       if(!roundOver && !busy){
         msgEl.textContent = (DIFFICULTIES[difficulty].firstTapBottomRow && !firstMoveDone)
-          ? 'さいしょは、一番下の行をタップしてね'
-          : '同じ色を3つ以上つなげてタップしてね';
+          ? t('msgBottomFirst')
+          : t('msgDefault');
       }
     },2200);
   }finally{
@@ -1111,18 +1295,18 @@ async function showHint(){
     const candidates=allGroups(grid).filter(g=>g.some(([r,c])=>r===ROWS-1));
     group = candidates.length ? candidates.reduce((a,b)=>b.length>a.length?b:a) : null;
     if(!group){
-      msgEl.textContent='一番下の行に消せるところが見当たらないみたい';
+      msgEl.textContent=t('msgNoBottomMoves');
       return;
     }
   }else{
     group=bestGroup(grid);
   }
   if(!group){
-    msgEl.textContent='もう消せる場所がないみたい。ギブアップしてもいいよ';
+    msgEl.textContent=t('msgNoMoves');
     return;
   }
   hintPenaltyPending=true;
-  msgEl.textContent='光っているところをタップしてみてね(次に消すスコアは半分になるよ)';
+  msgEl.textContent=t('msgTapHighlighted');
   group.forEach(([r,c])=>{
     const el=boardEl.children[r*COLS+c];
     if(el) el.classList.add('hint');
@@ -1174,7 +1358,7 @@ async function autoSolveDemo(){
   demoBtn.disabled=true;
   hideResultPopup();
   demoPaused=false;
-  msgEl.textContent='お手本を考え中…';
+  msgEl.textContent=t('demoThinking');
   await sleep(30); // メッセージを画面に反映させてから重い処理へ
 
   demoRestarted=false;
@@ -1184,7 +1368,7 @@ async function autoSolveDemo(){
     grid=cloneGrid(initialGrid);
     render();
     demoRestarted=true;
-    msgEl.textContent='最初の盤面から、お手本を考え中…';
+    msgEl.textContent=t('demoThinkingRestart');
     await sleepPausable(500);
   }
 
@@ -1230,8 +1414,8 @@ async function playDemoSequence(){
   demoControls.style.display='flex';
 
   msgEl.textContent = demoFullyClearable
-    ? (demoRestarted ? '最初の盤面から、お手本を再生しています…(記録済みのスコアは変わりません)' : 'お手本を再生しています…(記録済みのスコアは変わりません)')
-    : 'お手本を再生しています(ここからは全部は消せなかったみたい)';
+    ? (demoRestarted ? t('demoPlayingRestart') : t('demoPlaying'))
+    : t('demoPlayingPartial');
 
   for(const group of demoSequence){
     // 1. まず消える範囲を光らせて囲う
@@ -1257,8 +1441,8 @@ async function playDemoSequence(){
   }
 
   msgEl.textContent = demoFullyClearable
-    ? 'お手本の通りで、全部消しきれました!記録済みのスコアはさっきのままだよ'
-    : 'お手本はここまで。記録済みのスコアはさっきのままだよ';
+    ? t('demoDonePerfect')
+    : t('demoDonePartial');
 
   // ストップ/さいせいを隠して、もう一度見るボタンを出す
   demoStopBtn.style.display='none';
@@ -1278,7 +1462,7 @@ function startGame(diff){
   difficulty=diff;
   const d=DIFFICULTIES[diff];
   ROWS=d.rows; COLS=d.cols; COLORS=d.colors;
-  diffLabelEl.textContent=`${d.label}(${d.colors}色・${d.rows}×${d.cols})`;
+  diffLabelEl.textContent=diffSummary(diff);
   grid=makeGrid();
   initialGrid=cloneGrid(grid);
   score=0;
@@ -1292,10 +1476,8 @@ function startGame(diff){
   undoBtn.disabled=true;
   undoBtn.style.display = d.isInfinite ? 'none' : 'block'; // むげんモードでは使わない
   document.getElementById('actionRow').classList.toggle('no-undo', d.isInfinite);
-  document.getElementById('timeLabel').textContent = d.isInfinite ? 'のこり時間' : '経過時間';
-  msgEl.textContent = DIFFICULTIES[diff].firstTapBottomRow
-    ? 'さいしょは、一番下の行をタップしてね'
-    : '同じ色を3つ以上つなげてタップしてね';
+  document.getElementById('timeLabel').textContent = d.isInfinite ? t('timeLabelRemaining') : t('timeLabelElapsed');
+  msgEl.textContent = d.firstTapBottomRow ? t('msgBottomFirst') : t('msgDefault');
   render();
   if(d.isInfinite){
     startCountdown(d.targetTime, onInfiniteTimeUp);
@@ -1312,12 +1494,12 @@ async function onInfiniteTimeUp(){
   hintBtn.disabled=true;
   const d=DIFFICULTIES[difficulty];
   const finalScore=score;
-  msgEl.textContent=`タイムアップ! スコア ${finalScore} でした`;
+  msgEl.textContent=t('msgTimeUp',{score:finalScore});
   const isNewHighScore = await recordRound(finalScore,d.targetTime);
   if(isRankingOptedIn() && finalScore>0){
     supabaseInsertScore(getNickname(),difficulty,finalScore,d.targetTime);
   }
-  showResultPopup('タイムアップ!',finalScore,d.targetTime,finalScore,0,false,0,isNewHighScore);
+  showResultPopup(t('resultTitleTimeUp'),finalScore,d.targetTime,finalScore,0,false,0,isNewHighScore);
 }
 
 // むげんモードで、補充しても消せる場所が無くなった時点で終了する
@@ -1328,8 +1510,8 @@ async function finishInfiniteStuck(){
   hintBtn.disabled=true;
   const elapsed=stopTimer(); // カウントダウンを止めて、その時点までの経過秒数を取得
   const finalScore=score;
-  const prefix='おつかれさま!全部消せなくなっちゃったよ!';
-  msgEl.textContent=`${prefix} スコア ${finalScore} でした`;
+  const prefix=t('resultTitleStuck');
+  msgEl.textContent=t('msgStuckOrGiveup',{prefix,score:finalScore});
   const isNewHighScore = await recordRound(finalScore,elapsed);
   if(isRankingOptedIn() && finalScore>0){
     supabaseInsertScore(getNickname(),difficulty,finalScore,elapsed);
@@ -1349,20 +1531,20 @@ function renderRankingSection(){
   if(isRankingOptedIn()){
     const name=getNickname();
     el.innerHTML=`
-      <div class="ranking-status">🏆 <b>${escapeHtml(name)}</b>さんとして参加中</div>
+      <div class="ranking-status">${t('rankingStatus',{name:escapeHtml(name)})}</div>
       <div class="ranking-actions">
-        <button id="changeNicknameBtn" class="ranking-link-btn">ニックネーム変更</button>
-        <button id="leaveRankingBtn" class="ranking-link-btn">参加をやめる</button>
+        <button id="changeNicknameBtn" class="ranking-link-btn">${t('rankingChangeNickname')}</button>
+        <button id="leaveRankingBtn" class="ranking-link-btn">${t('rankingLeave')}</button>
       </div>`;
     document.getElementById('changeNicknameBtn').addEventListener('click',()=>showNicknameModal(false));
     document.getElementById('leaveRankingBtn').addEventListener('click',()=>{
-      if(confirm('ランキング参加をやめますか?')){
+      if(confirm(t('rankingLeaveConfirm'))){
         setRankingOptedIn(false);
         renderRankingSection();
       }
     });
   }else{
-    el.innerHTML=`<button id="joinRankingBtn" class="ranking-join-btn">🏆 みんなのランキングに参加する</button>`;
+    el.innerHTML=`<button id="joinRankingBtn" class="ranking-join-btn">${t('rankingJoin')}</button>`;
     document.getElementById('joinRankingBtn').addEventListener('click',()=>showNicknameModal(true));
   }
 }
@@ -1377,7 +1559,7 @@ function hideNicknameModal(){
 }
 document.getElementById('nicknameConfirmBtn').addEventListener('click',()=>{
   const val=document.getElementById('nicknameInput').value.trim();
-  if(!val){ alert('ニックネームを入力してね'); return; }
+  if(!val){ alert(t('nicknameEmptyAlert')); return; }
   setNickname(val.slice(0,10));
   setRankingOptedIn(true);
   hideNicknameModal();
@@ -1389,13 +1571,13 @@ document.getElementById('nicknameCancelBtn').addEventListener('click',hideNickna
 async function showTodayRanking(){
   const d=DIFFICULTIES[difficulty];
   const listEl=document.getElementById('rankingViewList');
-  document.getElementById('rankingViewTitle').textContent = d ? `今日の「${d.label}」ランキング` : '今日のランキング';
-  listEl.innerHTML='<div style="text-align:center;color:var(--ink-soft);">読み込み中…</div>';
+  document.getElementById('rankingViewTitle').textContent = d ? t('rankingViewToday',{label:diffName(difficulty)}) : t('rankingViewGeneric');
+  listEl.innerHTML=`<div style="text-align:center;color:var(--ink-soft);">${t('rankingLoading')}</div>`;
   document.getElementById('rankingViewOverlay').classList.add('show');
   try{
     const fullList=await supabaseFetchFullBoard(dateKey(new Date()),difficulty);
     if(!fullList.length){
-      listEl.innerHTML='<div style="text-align:center;color:var(--ink-soft);">まだ今日の記録がないみたい</div>';
+      listEl.innerHTML=`<div style="text-align:center;color:var(--ink-soft);">${t('rankingNoData')}</div>`;
       return;
     }
     const topRows=fullList.slice(0,7);
@@ -1403,9 +1585,9 @@ async function showTodayRanking(){
       const isYou=r.user_id && r.user_id===getUserId();
       return `
       <div class="ranking-row${isYou?' ranking-row-you':''}">
-        <span class="ranking-rank">${rank}位</span>
-        <span class="ranking-name">${escapeHtml(r.nickname)}${isYou?' <span class="you-badge">あなた</span>':''}</span>
-        <span class="ranking-score">${r.score}点</span>
+        <span class="ranking-rank">${rank}${t('positionSuffix')}</span>
+        <span class="ranking-name">${escapeHtml(r.nickname)}${isYou?` <span class="you-badge">${t('youBadge')}</span>`:''}</span>
+        <span class="ranking-score">${r.score}${t('pointsSuffix')}</span>
       </div>`;
     };
     let html=topRows.map((r,i)=>rowHtml(r,i+1)).join('');
@@ -1419,7 +1601,7 @@ async function showTodayRanking(){
     listEl.innerHTML=html;
   }catch(e){
     console.error('ランキング表示でエラーが発生しました',e);
-    listEl.innerHTML='<div style="text-align:center;color:var(--ink-soft);">読み込みに失敗したみたい。もう一度試してみてね</div>';
+    listEl.innerHTML=`<div style="text-align:center;color:var(--ink-soft);">${t('rankingLoadError')}</div>`;
   }
 }
 document.getElementById('resultRankingBtn').addEventListener('click',showTodayRanking);
@@ -1469,11 +1651,13 @@ function renderCalendar(){
   const now=new Date();
   const base=new Date(now.getFullYear(),now.getMonth()+calMonthOffset,1);
   const y=base.getFullYear(), m=base.getMonth();
-  calTitle.textContent=`${y}年${m+1}月`;
+  calTitle.textContent = lang==='en'
+    ? base.toLocaleDateString('en-US',{year:'numeric',month:'long'})
+    : `${y}年${m+1}月`;
   dayDetail.style.display='none';
 
   calDow.innerHTML='';
-  ['日','月','火','水','木','金','土'].forEach(dw=>{
+  CAL_DOW[lang].forEach(dw=>{
     const el=document.createElement('div');
     el.className='cal-dow'; el.textContent=dw;
     calDow.appendChild(el);
@@ -1557,13 +1741,13 @@ function showDayDetail(key){
     Object.keys(DIFFICULTIES).forEach(diff=>{
       if(rec[diff]){
         const r=rec[diff];
-        html+=`${DIFFICULTIES[diff].label}: ベストスコア ${r.bestScore}(${fmtTime(r.bestTime)})・プレイ ${r.plays}回<br>`;
+        html+=t('dayDetailLine',{label:diffName(diff),score:r.bestScore,time:fmtTime(r.bestTime),plays:r.plays})+'<br>';
       }
     });
   }else{
-    html+=`<span style="color:var(--ink-soft);">この日のあなたの記録はまだ無いよ</span><br>`;
+    html+=`<span style="color:var(--ink-soft);">${t('dayDetailNoRecord')}</span><br>`;
   }
-  html+=`<div id="dayRankingLoading" class="day-loading">🏆 みんなのランキングを読み込み中…</div>`;
+  html+=`<div id="dayRankingLoading" class="day-loading">${t('dayRankingLoading')}</div>`;
   dayDetail.innerHTML=html;
   dayDetail.style.display='block';
   fetchAndAppendDayRanking(key);
@@ -1578,9 +1762,9 @@ async function fetchAndAppendDayRanking(key){
       if(rows.length){
         const list=rows.map((r,i)=>{
           const isYou=r.user_id && r.user_id===getUserId();
-          return `${i+1}位 ${escapeHtml(r.nickname)}${isYou?'(あなた)':''}(${r.score}点)`;
+          return `${i+1}${t('positionSuffix')} ${escapeHtml(r.nickname)}${isYou?`(${t('youBadge')})`:''}(${r.score}${t('pointsSuffix')})`;
         }).join('・');
-        sections.push(`<div class="day-ranking-line"><b>${DIFFICULTIES[diff].label}トップ3:</b> ${list}</div>`);
+        sections.push(`<div class="day-ranking-line"><b>${t('dayRankingTop3',{label:diffName(diff)})}</b> ${list}</div>`);
       }
     }
     const loadingEl=document.getElementById('dayRankingLoading');
@@ -1610,10 +1794,72 @@ document.getElementById('closeCal').addEventListener('click',()=>calOverlay.clas
 document.getElementById('prevMonth').addEventListener('click',()=>{calMonthOffset--;renderCalendar();});
 document.getElementById('nextMonth').addEventListener('click',()=>{calMonthOffset++;renderCalendar();});
 
+// ---------- 言語切り替えの反映 ----------
+function applyLanguage(){
+  document.documentElement.lang=lang;
+  document.title=t('appTitle');
+  document.getElementById('appTitleText').textContent=t('appTitle');
+  document.getElementById('scoreLabelText').textContent=t('scoreLabel');
+  document.getElementById('diffTitleText').textContent=t('diffTitle');
+  document.getElementById('diffSubtitleText').textContent=t('diffSubtitle');
+  document.getElementById('langToggleBtn').textContent=t('langToggle');
+  document.getElementById('nicknameTitleText').textContent=t('nicknameTitle');
+  document.getElementById('nicknameSubtitleText').textContent=t('nicknameSubtitle');
+  document.getElementById('nicknameInput').placeholder=t('nicknamePlaceholder');
+  document.getElementById('nicknameConfirmBtn').textContent=t('nicknameConfirm');
+  document.getElementById('nicknameCancelBtn').textContent=t('nicknameCancel');
+  document.getElementById('tutorialTitleText').textContent=t('tutorialTitle');
+  document.getElementById('tutorial1Text').innerHTML=t('tutorial1');
+  document.getElementById('tutorial2Text').innerHTML=t('tutorial2');
+  document.getElementById('tutorial3Text').innerHTML=t('tutorial3');
+  document.getElementById('tutorial4Text').innerHTML=t('tutorial4');
+  document.getElementById('tutorialCloseBtn').textContent=t('tutorialClose');
+  document.getElementById('resultScoreLabelText').textContent=t('resultScoreLabel');
+  document.getElementById('resultTimeLabelText').textContent=t('resultTimeLabel');
+  document.getElementById('resultHighScore').textContent=t('resultHighScore');
+  document.getElementById('resultShareBtn').textContent=t('resultShareBtn');
+  document.getElementById('resultRankingBtn').textContent=t('resultRankingBtn');
+  document.getElementById('resultNewGameBtn').textContent=t('resultNewGameBtn');
+  document.getElementById('resultCloseBtn').textContent=t('resultCloseBtn');
+  document.getElementById('calEmptyNote').textContent=t('calEmptyNote');
+  document.getElementById('closeCal').textContent=t('calClose');
+  document.getElementById('demoStopBtn').textContent=t('demoStop');
+  document.getElementById('demoPlayBtn').textContent=t('demoPlay');
+  document.getElementById('demoReplayBtn').textContent=t('demoReplay');
+
+  Object.keys(DIFFICULTIES).forEach(key=>{
+    const btn=document.querySelector(`.diff-choice[data-d="${key}"]`);
+    if(!btn) return;
+    btn.querySelector('.name').textContent=diffName(key);
+    btn.querySelector('.desc').textContent=diffDesc(key);
+  });
+  const badge=document.querySelector('.diff-choice[data-d="easy"] .beginner-badge');
+  if(badge) badge.textContent=t('beginnerBadge');
+
+  document.getElementById('timeLabel').textContent =
+    (difficulty && DIFFICULTIES[difficulty] && DIFFICULTIES[difficulty].isInfinite) ? t('timeLabelRemaining') : t('timeLabelElapsed');
+
+  hintBtn.textContent=t('hintBtn');
+  undoBtn.textContent=t('undoBtn');
+  updateGiveupButton();
+  if(!difficulty){ msgEl.textContent=t('msgChooseDifficulty'); }
+  if(difficulty){ diffLabelEl.textContent=diffSummary(difficulty); }
+  renderRankingSection();
+  todayLabel();
+  if(calOverlay.classList.contains('show')) renderCalendar();
+}
+function toggleLanguage(){
+  lang = (lang==='ja') ? 'en' : 'ja';
+  try{ localStorage.setItem(LANG_KEY,lang); }catch(e){}
+  applyLanguage();
+}
+document.getElementById('langToggleBtn').addEventListener('click',toggleLanguage);
+
 // ---------- init ----------
 (async function init(){
   document.getElementById('versionTag').textContent='v'+APP_VERSION;
   await checkForUpdate(); // 古いバージョンならここでリロードされ、以降の処理は行われない
+  applyLanguage();
   todayLabel();
   await loadRecords();
   let seen=null;
