@@ -140,10 +140,17 @@
   .diff-card{
     background:var(--paper);border-radius:22px;padding:20px 22px;
     width:100%;max-width:400px;box-shadow:0 10px 30px rgba(0,0,0,.25);text-align:center;
-    max-height:calc(100dvh - 28px);overflow-y:auto;
+    max-height:calc(100dvh - 28px);overflow-y:auto;position:relative;
   }
+  .card-cal-btn-inline{
+    flex-shrink:0;background:#fff;border:none;border-radius:10px;width:36px;height:36px;font-size:16px;
+    box-shadow:0 2px 6px rgba(59,50,42,.12);cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .card-cal-btn-inline:active{transform:translateY(2px);}
   .diff-card h2{margin:0 0 4px;font-size:29px;font-weight:900;}
-  .diff-card p{margin:0 0 10px;font-size:16px;color:var(--ink-soft);}
+  .diff-card p{margin:0;font-size:16px;color:var(--ink-soft);}
+  .diff-subrow{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;}
   .diff-choice{
     width:100%;background:#fff;border:2px solid transparent;border-radius:16px;
     padding:16px;margin-bottom:8px;font-family:inherit;cursor:pointer;
@@ -197,7 +204,7 @@
   .result-card{
     background:var(--paper);border-radius:22px;padding:28px 24px;
     width:100%;max-width:400px;box-shadow:0 10px 30px rgba(0,0,0,.25);text-align:center;
-    border:3px solid transparent;
+    border:3px solid transparent;position:relative;
   }
   .result-card h2{margin:0 0 4px;font-size:26px;font-weight:900;color:var(--shu);}
   .result-card.perfect{
@@ -210,11 +217,17 @@
   }
   .result-card.perfect h2::before{content:'🎉 ';}
   .result-card.perfect h2::after{content:' 🎉';}
-  .result-card .result-diff{font-size:15px;color:var(--ink-soft);font-weight:700;margin-bottom:18px;}
+  .result-card .result-diff{font-size:15px;color:var(--ink-soft);font-weight:700;margin-bottom:0;}
+  .result-subrow{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:18px;}
   .result-stats{display:flex;gap:10px;margin-bottom:8px;}
   .result-stats .box{flex:1;background:#fff;border-radius:14px;padding:14px 6px;box-shadow:0 2px 8px rgba(59,50,42,.08);}
   .result-stats .box .label{font-size:13px;color:var(--ink-soft);font-weight:500;margin-bottom:2px;}
   .result-stats .box .value{font-size:24px;font-weight:900;font-variant-numeric:tabular-nums;}
+  .result-highscore{
+    font-size:17px;font-weight:900;color:#C98A00;text-align:center;margin-bottom:8px;
+    animation:hsPulse 1s ease-in-out infinite alternate;
+  }
+  @keyframes hsPulse{from{transform:scale(1);}to{transform:scale(1.06);}}
   .result-breakdown{font-size:13px;color:var(--shu);font-weight:700;text-align:center;margin-bottom:16px;}
   .result-demo{
     width:100%;background:#fff;color:var(--ink-soft);border:2px solid var(--paper-deep);border-radius:16px;
@@ -313,7 +326,10 @@
 <div class="overlay" id="diffOverlay">
   <div class="diff-card">
     <h2>難易度をえらんでね</h2>
-    <p>あとから「新しいゲームを始める」でも選び直せます</p>
+    <div class="diff-subrow">
+      <p>あとから「新しいゲームを始める」でも選び直せます</p>
+      <button class="card-cal-btn-inline" id="openCalFromDiff" aria-label="記録を見る">📅</button>
+    </div>
     <button class="diff-choice" data-d="easy">
       <span class="name">かんたん</span>
       <span class="desc">5色・6×6マス</span>
@@ -323,7 +339,7 @@
     <button class="diff-choice" data-d="hard"><span class="name">むずかしい</span><span class="desc">7色・8×9マス・最初は一番下の行から</span></button>
     <button class="diff-choice" data-d="infinite"><span class="name">♾️ むげん</span><span class="desc">30秒間で何個消せるかチャレンジ・上から無限に降ってくる</span></button>
     <div class="ranking-section" id="rankingSection"></div>
-    <div class="version-tag">v1.1.0</div>
+    <div class="version-tag">v1.1.3</div>
   </div>
 </div>
 
@@ -362,7 +378,10 @@
 <div class="overlay" id="resultOverlay">
   <div class="result-card">
     <h2 id="resultTitle">おつかれさま!</h2>
-    <div class="result-diff" id="resultDiff"></div>
+    <div class="result-subrow">
+      <div class="result-diff" id="resultDiff"></div>
+      <button class="card-cal-btn-inline" id="openCalFromResult" aria-label="記録を見る">📅</button>
+    </div>
     <div class="result-stats">
       <div class="box">
         <div class="label">スコア</div>
@@ -373,6 +392,7 @@
         <div class="value" id="resultTime">00:00</div>
       </div>
     </div>
+    <div class="result-highscore" id="resultHighScore" style="display:none;">✨ 本日のハイスコア更新! ✨</div>
     <div class="result-breakdown" id="resultBreakdown" style="display:none;"></div>
     <button class="result-demo" id="resultDemoBtn" style="display:none;">お手本を自動再生する</button>
     <button class="result-share" id="resultShareBtn">🏆 スコアを共有する</button>
@@ -533,13 +553,18 @@ async function recordRound(finalScore,elapsedSec){
   const key=dateKey(new Date());
   if(!records[key]) records[key]={};
   const cur=records[key][difficulty]||{bestScore:0,bestTime:0,plays:0};
+  const hadPriorPlay=cur.plays>0;
+  const previousBest=cur.bestScore;
   cur.plays+=1;
+  let isNewHighScore=false;
   if(finalScore>=cur.bestScore){
+    if(hadPriorPlay && finalScore>previousBest) isNewHighScore=true;
     cur.bestScore=finalScore;
     cur.bestTime=elapsedSec;
   }
   records[key][difficulty]=cur;
   await saveRecords();
+  return isNewHighScore;
 }
 
 // ---------- timer ----------
@@ -925,19 +950,20 @@ async function finishRound(prefix,allowTimeBonus,isPerfect){
   msgEl.textContent = parts.length>1
     ? `${prefix} スコア ${finalScore}(${parts.join('+')})・時間 ${fmtTime(elapsed)} でした`
     : `${prefix} スコア ${finalScore}・時間 ${fmtTime(elapsed)} でした`;
-  await recordRound(finalScore,elapsed);
+  const isNewHighScore = await recordRound(finalScore,elapsed);
   // ランキング参加中なら、何か1つでも消せていればスコアを送信する(通信失敗しても無視)
   if(isRankingOptedIn() && finalScore>0){
     supabaseInsertScore(getNickname(),difficulty,finalScore,elapsed);
   }
-  showResultPopup(prefix,finalScore,elapsed,score,timeBonus,!!isPerfect,perfectBonus);
+  showResultPopup(prefix,finalScore,elapsed,score,timeBonus,!!isPerfect,perfectBonus,isNewHighScore);
 }
 
-function showResultPopup(prefix,finalScore,elapsedSec,baseScore,timeBonus,isPerfect,perfectBonus){
+function showResultPopup(prefix,finalScore,elapsedSec,baseScore,timeBonus,isPerfect,perfectBonus,isNewHighScore){
   document.getElementById('resultTitle').textContent=prefix;
   document.getElementById('resultDiff').textContent=DIFFICULTIES[difficulty].label+`(${DIFFICULTIES[difficulty].colors}色・${DIFFICULTIES[difficulty].rows}×${DIFFICULTIES[difficulty].cols})`;
   document.getElementById('resultScore').textContent=finalScore;
   document.getElementById('resultTime').textContent=fmtTime(elapsedSec);
+  document.getElementById('resultHighScore').style.display = isNewHighScore ? 'block' : 'none';
   const breakdownEl=document.getElementById('resultBreakdown');
   const parts=[];
   if(timeBonus>0) parts.push(`はやさボーナス${timeBonus}`);
@@ -1195,11 +1221,11 @@ async function onInfiniteTimeUp(){
   const d=DIFFICULTIES[difficulty];
   const finalScore=score;
   msgEl.textContent=`タイムアップ! スコア ${finalScore} でした`;
-  await recordRound(finalScore,d.targetTime);
+  const isNewHighScore = await recordRound(finalScore,d.targetTime);
   if(isRankingOptedIn() && finalScore>0){
     supabaseInsertScore(getNickname(),difficulty,finalScore,d.targetTime);
   }
-  showResultPopup('タイムアップ!',finalScore,d.targetTime,finalScore,0,false,0);
+  showResultPopup('タイムアップ!',finalScore,d.targetTime,finalScore,0,false,0,isNewHighScore);
 }
 
 // むげんモードで、補充しても消せる場所が無くなった時点で終了する
@@ -1212,11 +1238,11 @@ async function finishInfiniteStuck(){
   const finalScore=score;
   const prefix='おつかれさま!全部消せなくなっちゃったよ!';
   msgEl.textContent=`${prefix} スコア ${finalScore} でした`;
-  await recordRound(finalScore,elapsed);
+  const isNewHighScore = await recordRound(finalScore,elapsed);
   if(isRankingOptedIn() && finalScore>0){
     supabaseInsertScore(getNickname(),difficulty,finalScore,elapsed);
   }
-  showResultPopup(prefix,finalScore,elapsed,finalScore,0,false,0);
+  showResultPopup(prefix,finalScore,elapsed,finalScore,0,false,0,isNewHighScore);
 }
 
 function showDiffPopup(){
@@ -1275,7 +1301,7 @@ async function showTodayRanking(){
   listEl.innerHTML='<div style="text-align:center;color:var(--ink-soft);">読み込み中…</div>';
   document.getElementById('rankingViewOverlay').classList.add('show');
   try{
-    const rows=await supabaseFetchTop(dateKey(new Date()),difficulty,5);
+    const rows=await supabaseFetchTop(dateKey(new Date()),difficulty,7);
     if(!rows.length){
       listEl.innerHTML='<div style="text-align:center;color:var(--ink-soft);">まだ今日の記録がないみたい</div>';
       return;
@@ -1429,11 +1455,14 @@ async function fetchAndAppendDayRanking(key){
   }
 }
 
-document.getElementById('openCal').addEventListener('click',()=>{
+function openCalendar(){
   calMonthOffset=0;
   renderCalendar();
   calOverlay.classList.add('show');
-});
+}
+document.getElementById('openCal').addEventListener('click',openCalendar);
+document.getElementById('openCalFromDiff').addEventListener('click',openCalendar);
+document.getElementById('openCalFromResult').addEventListener('click',openCalendar);
 document.getElementById('closeCal').addEventListener('click',()=>calOverlay.classList.remove('show'));
 document.getElementById('prevMonth').addEventListener('click',()=>{calMonthOffset--;renderCalendar();});
 document.getElementById('nextMonth').addEventListener('click',()=>{calMonthOffset++;renderCalendar();});
