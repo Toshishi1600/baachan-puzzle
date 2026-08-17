@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="app-version" content="1.4.5">
+<meta name="app-version" content="1.5.1">
 <title>いろあわせパズル</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
@@ -198,6 +198,37 @@
     width:100%;padding:14px;font-size:17px;font-family:inherit;border:2px solid var(--paper-deep);
     border-radius:14px;background:#fff;color:var(--ink);box-sizing:border-box;
   }
+  .field-label{margin:14px 0 6px;font-size:14px;color:var(--ink-soft);font-weight:700;text-align:left;}
+  .age-group-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .age-btn{
+    background:#fff;border:2px solid var(--paper-deep);border-radius:14px;padding:12px 4px;
+    font-size:14px;font-weight:700;color:var(--ink-soft);font-family:inherit;cursor:pointer;
+  }
+  .age-btn.active{border-color:var(--shu);color:var(--shu);background:#fff6f1;}
+  .group-friendcode-box{
+    background:#fff;border-radius:14px;padding:12px 14px;text-align:center;font-size:15px;
+    margin-bottom:14px;box-shadow:0 1px 4px rgba(59,50,42,.08);
+  }
+  .group-friendcode-box b{color:var(--shu);letter-spacing:1px;}
+  .group-action-block{margin-top:16px;padding-top:14px;border-top:1px solid var(--paper-deep);text-align:left;}
+  .group-action-block p{margin:0 0 6px;font-size:14px;font-weight:700;color:var(--ink-soft);}
+  .group-card{
+    background:#fff;border-radius:14px;padding:12px 14px;margin-bottom:8px;
+    box-shadow:0 1px 4px rgba(59,50,42,.08);
+  }
+  .group-card .g-name{font-weight:900;font-size:16px;}
+  .group-card .g-meta{font-size:12px;color:var(--ink-soft);margin-top:2px;}
+  .group-card .g-btn-row{display:flex;gap:8px;margin-top:8px;}
+  .group-card .g-leave,.group-card .g-share{
+    background:#fff;border:2px solid var(--paper-deep);color:var(--ink-soft);
+    border-radius:10px;padding:6px 14px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;
+  }
+  .group-card .g-share{border-color:var(--shu);color:var(--shu);}
+  .ranking-row-mate{border-color:var(--c2);background:#f0f8fb;}
+  .mate-badge{
+    display:inline-block;font-size:11px;background:var(--c2);color:#fff;
+    padding:2px 8px;border-radius:999px;margin-left:6px;font-weight:700;vertical-align:middle;
+  }
   .ranking-row{
     display:flex;align-items:center;gap:10px;background:#fff;border-radius:12px;
     padding:12px 14px;margin-bottom:8px;box-shadow:0 1px 4px rgba(59,50,42,.08);
@@ -345,7 +376,7 @@
 <div class="overlay" id="diffOverlay">
   <div class="diff-card">
     <h2 id="diffTitleText">難易度をえらんでね</h2>
-    <div class="lang-row">
+    <div class="lang-row" style="display:none;">
       <button class="lang-toggle-btn" id="langToggleBtn">🌐 English</button>
     </div>
     <div class="diff-subrow">
@@ -370,8 +401,50 @@
     <h2 id="nicknameTitleText">ニックネームをきめてね</h2>
     <p id="nicknameSubtitleText">ランキングに表示される名前だよ(あとから変更もできます)</p>
     <input type="text" id="nicknameInput" maxlength="10" placeholder="例: トシシ" class="nickname-input">
+
+    <p class="field-label" id="friendCodeLabelText">合言葉(友だちに教える用)</p>
+    <input type="text" id="friendCodeInput" maxlength="10" placeholder="例: ABC123" class="nickname-input">
+
+    <p class="field-label" id="ageGroupLabelText">年代(任意)</p>
+    <div class="age-group-row" id="ageGroupRow">
+      <button type="button" class="age-btn" data-age="senior">👴 シニア</button>
+      <button type="button" class="age-btn" data-age="adult">👨 大人</button>
+      <button type="button" class="age-btn" data-age="youth">🧑‍🎓 若者</button>
+      <button type="button" class="age-btn" data-age="">答えない</button>
+    </div>
+
     <button class="newgame" id="nicknameConfirmBtn" style="width:100%;margin-top:14px;">けってい</button>
     <button class="result-close" id="nicknameCancelBtn" style="width:100%;">やめる</button>
+  </div>
+</div>
+
+<div class="overlay" id="groupOverlay">
+  <div class="cal-card">
+    <div class="cal-head">
+      <div class="cal-title" id="groupTitleText">グループ</div>
+      <button id="groupOverlayClose">✕</button>
+    </div>
+    <div class="group-friendcode-box">
+      <span id="myFriendCodeLabelText">あなたの合言葉:</span> <b id="myFriendCodeText">------</b>
+    </div>
+    <div id="groupList"></div>
+    <div class="group-action-block">
+      <p id="groupCreateLabelText">グループを作る</p>
+      <input type="text" id="newGroupNameInput" maxlength="12" placeholder="例: かぞく" class="nickname-input">
+      <button class="newgame" id="createGroupBtn" style="width:100%;margin-top:8px;">作成する</button>
+    </div>
+    <div class="group-action-block">
+      <p id="groupJoinLabelText">招待コードで参加する</p>
+      <input type="text" id="joinGroupCodeInput" maxlength="10" placeholder="招待コード" class="nickname-input">
+      <button class="newgame" id="joinGroupBtn" style="width:100%;margin-top:8px;">参加する</button>
+    </div>
+    <div class="group-action-block">
+      <p id="groupInviteLabelText">合言葉で誘う</p>
+      <select id="inviteTargetGroupSelect" class="nickname-input"></select>
+      <input type="text" id="inviteFriendCodeInput" maxlength="10" placeholder="相手の合言葉" class="nickname-input" style="margin-top:8px;">
+      <button class="newgame" id="inviteByFriendCodeBtn" style="width:100%;margin-top:8px;">追加する</button>
+    </div>
+    <button class="cal-close" id="groupOverlayCloseBottom">とじる</button>
   </div>
 </div>
 
@@ -381,6 +454,7 @@
       <div class="cal-title" id="rankingViewTitle">今日のランキング</div>
       <button id="rankingViewClose">✕</button>
     </div>
+    <select id="rankingCategorySelect" class="nickname-input" style="margin-top:10px;"></select>
     <div id="rankingViewList" style="margin-top:12px;"></div>
   </div>
 </div>
@@ -441,10 +515,10 @@
 </div>
 
 <script>
-// ---------- 言語(日本語/English) ----------
+// ---------- 言語(現在は日本語固定。切り替えUIは一旦非表示にしてるけど、
+// t()/I18N の仕組み自体は残してあるので将来また有効化しやすいようにしてある) ----------
 const LANG_KEY='puzzle-lang';
 let lang='ja';
-try{ lang=localStorage.getItem(LANG_KEY)||'ja'; }catch(e){}
 
 const I18N={
   ja:{
@@ -487,6 +561,32 @@ const I18N={
     nicknamePlaceholder:'例: トシシ', nicknameConfirm:'けってい', nicknameCancel:'やめる',
     nicknameEmptyAlert:'ニックネームを入力してね',
     nicknameInappropriateAlert:'不適切な名前が検知されました。別の名前を入力してね',
+    friendCodeLabel:'合言葉(友だちに教える用)', friendCodePlaceholder:'例: ABC123',
+    ageGroupLabel:'年代(任意)', ageSenior:'👴 シニア', ageAdult:'👨 大人', ageYouth:'🧑\u200d🎓 若者', ageSkip:'答えない',
+    friendCodeInvalidAlert:'合言葉は4〜10文字の英数字で入力してね',
+    friendCodeTakenAlert:'その合言葉はもう使われているみたい。別のにしてね',
+    groupBtn:'👥 グループを管理',
+    groupTitle:'グループ', myFriendCodeLabel:'あなたの合言葉:',
+    groupCreateLabel:'グループを作る', groupNamePlaceholder:'例: かぞく', groupCreateBtn:'作成する',
+    groupJoinLabel:'招待コードで参加する', groupJoinPlaceholder:'招待コード', groupJoinBtn:'参加する',
+    groupInviteLabel:'合言葉で誘う', groupInvitePlaceholder:'相手の合言葉', groupInviteBtn:'追加する',
+    groupLeaveBtn:'抜ける', groupLeaveConfirm:'このグループから抜けますか?',
+    groupMembersCount:'{count}人', groupInviteCodeLabel:'招待コード:',
+    groupNameEmptyAlert:'グループ名を入力してね',
+    groupLimitAlert:'グループは最大3つまでです',
+    groupErrorAlert:'通信エラーが発生しました。もう一度試してみてね',
+    groupNotFoundAlert:'その招待コードのグループが見つからないみたい',
+    groupAlreadyJoinedAlert:'そのグループにはもう入ってるよ',
+    friendCodeNotFoundAlert:'その合言葉の人が見つからないみたい',
+    friendCodeSelfAlert:'自分自身は誘えないよ',
+    targetGroupFullAlert:'その人はグループの上限(3つ)に達しているみたい',
+    inviteSuccessAlert:'{name}さんをグループに追加したよ!',
+    groupShareBtn:'共有する',
+    shareGroupInviteText:'「{name}」グループに招待するよ!このリンクを開けば参加できるよ',
+    shareGroupCopiedAlert:'招待リンクをコピーしたよ。LINEなどに貼り付けて送ってね',
+    groupJoinedViaLinkAlert:'「{name}」グループに参加したよ!',
+    mateBadge:'🤝 なかま',
+    categoryNational:'🌏 全国', categoryGroupPrefix:'👥 ',
 
     rankingJoin:'🏆 みんなのランキングに参加する',
     rankingStatus:'🏆 <b>{name}</b>さんとして参加中',
@@ -565,6 +665,28 @@ const I18N={
     nicknamePlaceholder:'e.g. Alex', nicknameConfirm:'OK', nicknameCancel:'Cancel',
     nicknameEmptyAlert:'Please enter a nickname',
     nicknameInappropriateAlert:'That name was flagged as inappropriate. Please choose another one',
+    friendCodeLabel:'Friend code (share with friends)', friendCodePlaceholder:'e.g. ABC123',
+    ageGroupLabel:'Age group (optional)', ageSenior:'👴 Senior', ageAdult:'👨 Adult', ageYouth:'🧑\u200d🎓 Youth', ageSkip:'Prefer not to say',
+    friendCodeInvalidAlert:'Friend code must be 4-10 letters/numbers',
+    friendCodeTakenAlert:'That friend code is already taken. Please choose another',
+    groupBtn:'👥 Manage Groups',
+    groupTitle:'Groups', myFriendCodeLabel:'Your friend code:',
+    groupCreateLabel:'Create a group', groupNamePlaceholder:'e.g. Family', groupCreateBtn:'Create',
+    groupJoinLabel:'Join with invite code', groupJoinPlaceholder:'Invite code', groupJoinBtn:'Join',
+    groupInviteLabel:'Invite by friend code', groupInvitePlaceholder:"Friend's code", groupInviteBtn:'Add',
+    groupLeaveBtn:'Leave', groupLeaveConfirm:'Leave this group?',
+    groupMembersCount:'{count}',  groupInviteCodeLabel:'Invite code:',
+    groupNameEmptyAlert:'Please enter a group name',
+    groupLimitAlert:'You can join up to 3 groups',
+    groupErrorAlert:'A network error occurred. Please try again',
+    groupNotFoundAlert:'No group found with that invite code',
+    groupAlreadyJoinedAlert:"You're already in that group",
+    friendCodeNotFoundAlert:'No player found with that friend code',
+    friendCodeSelfAlert:"You can't invite yourself",
+    targetGroupFullAlert:'That player has reached their group limit (3)',
+    inviteSuccessAlert:'Added {name} to the group!',
+    mateBadge:'🤝 Friend',
+    categoryNational:'🌏 National', categoryGroupPrefix:'👥 ',
 
     rankingJoin:'🏆 Join the Leaderboard',
     rankingStatus:'🏆 Playing as <b>{name}</b>',
@@ -625,7 +747,7 @@ const SYMBOLS=['●','■','▲','◆','★','✚','✖'];
 
 // ---------- みんなのランキング(Supabase) ----------
 // ※ バージョンを上げる時は、この値と<head>内のapp-versionメタタグの両方を書き換えること
-const APP_VERSION='1.4.5';
+const APP_VERSION='1.5.1';
 
 const SUPABASE_URL='https://jhrwpwpzxgxlvbartvqr.supabase.co/rest/v1/';
 const SUPABASE_KEY='sb_publishable_AaiMwnPXCL0oCfvQRqi9wA_x3Bl33da';
@@ -679,6 +801,130 @@ async function fetchWithTimeout(url,options,timeoutMs){
   }finally{
     clearTimeout(timer);
   }
+}
+
+// ---------- プロフィール(合言葉・年代) ----------
+const FRIEND_CODE_KEY='puzzle-friend-code';
+const AGE_GROUP_KEY='puzzle-age-group';
+function getFriendCode(){ try{ return localStorage.getItem(FRIEND_CODE_KEY)||''; }catch(e){ return ''; } }
+function setFriendCode(v){ try{ localStorage.setItem(FRIEND_CODE_KEY,v); }catch(e){} }
+function getAgeGroup(){ try{ return localStorage.getItem(AGE_GROUP_KEY)||''; }catch(e){ return ''; } }
+function setAgeGroup(v){ try{ localStorage.setItem(AGE_GROUP_KEY,v||''); }catch(e){} }
+
+function generateFriendCode(){
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 紛らわしい文字(0/O, 1/I)は除外
+  let s='';
+  for(let i=0;i<6;i++) s+=chars[Math.floor(Math.random()*chars.length)];
+  return s;
+}
+
+async function isFriendCodeTaken(code){
+  try{
+    const res=await fetchWithTimeout(`${SUPABASE_URL}profiles?friend_code=eq.${encodeURIComponent(code)}&select=user_id`,{headers:{'apikey':SUPABASE_KEY}},6000);
+    if(!res.ok) return false;
+    const rows=await res.json();
+    return rows.some(r=>r.user_id!==getUserId());
+  }catch(e){ return false; }
+}
+
+// プロフィールを取得し、無ければ合言葉を自動発行して作成する(既存ユーザーの自動移行も兼ねる)
+async function ensureProfile(){
+  const uid=getUserId();
+  try{
+    const res=await fetchWithTimeout(`${SUPABASE_URL}profiles?user_id=eq.${uid}&select=*`,{headers:{'apikey':SUPABASE_KEY}},6000);
+    if(res.ok){
+      const rows=await res.json();
+      if(rows.length){
+        setFriendCode(rows[0].friend_code||'');
+        setAgeGroup(rows[0].age_group||'');
+        return rows[0];
+      }
+    }
+  }catch(e){ console.error('プロフィール取得に失敗しました',e); }
+
+  // 存在しなければ新規作成(合言葉は自動発行)
+  const nickname=getNickname()||'Player';
+  for(let i=0;i<3;i++){
+    const code=generateFriendCode();
+    try{
+      const res=await fetchWithTimeout(`${SUPABASE_URL}profiles`,{
+        method:'POST',
+        headers:{'apikey':SUPABASE_KEY,'Content-Type':'application/json','Prefer':'return=representation'},
+        body:JSON.stringify({user_id:uid,nickname,friend_code:code})
+      },6000);
+      if(res.ok){
+        const rows=await res.json();
+        if(rows.length){
+          setFriendCode(rows[0].friend_code||'');
+          setAgeGroup(rows[0].age_group||'');
+          return rows[0];
+        }
+      }
+    }catch(e){ console.error('プロフィール作成に失敗しました',e); }
+  }
+  return null;
+}
+
+async function upsertProfile(fields){
+  const uid=getUserId();
+  try{
+    const res=await fetchWithTimeout(`${SUPABASE_URL}profiles?user_id=eq.${uid}`,{
+      method:'PATCH',
+      headers:{'apikey':SUPABASE_KEY,'Content-Type':'application/json','Prefer':'return=representation'},
+      body:JSON.stringify(fields)
+    },6000);
+    if(res.ok){
+      const rows=await res.json();
+      if(rows.length) return rows[0];
+    }
+  }catch(e){ console.error('プロフィール更新に失敗しました',e); }
+  try{
+    const res=await fetchWithTimeout(`${SUPABASE_URL}profiles`,{
+      method:'POST',
+      headers:{'apikey':SUPABASE_KEY,'Content-Type':'application/json','Prefer':'return=representation'},
+      body:JSON.stringify({user_id:uid,...fields})
+    },6000);
+    if(res.ok){ const rows=await res.json(); return rows[0]; }
+  }catch(e){ console.error('プロフィール作成に失敗しました',e); }
+  return null;
+}
+
+// ---------- グループ ----------
+const MAX_GROUPS=3;
+function generateInviteCode(){ return generateFriendCode(); }
+
+async function fetchMyGroups(){
+  try{
+    const res=await fetchWithTimeout(`${SUPABASE_URL}group_members?user_id=eq.${getUserId()}&select=group_id,groups(id,name,invite_code)`,{headers:{'apikey':SUPABASE_KEY}},6000);
+    if(!res.ok) return [];
+    const rows=await res.json();
+    return rows.map(r=>r.groups).filter(Boolean);
+  }catch(e){ console.error('グループ取得に失敗しました',e); return []; }
+}
+async function fetchGroupMemberIds(groupId){
+  try{
+    const res=await fetchWithTimeout(`${SUPABASE_URL}group_members?group_id=eq.${groupId}&select=user_id`,{headers:{'apikey':SUPABASE_KEY}},6000);
+    if(!res.ok) return new Set();
+    const rows=await res.json();
+    return new Set(rows.map(r=>r.user_id));
+  }catch(e){ return new Set(); }
+}
+async function fetchAllMyGroupMateIds(){
+  const myGroups=await fetchMyGroups();
+  const ids=new Set();
+  for(const g of myGroups){
+    const s=await fetchGroupMemberIds(g.id);
+    s.forEach(id=>{ if(id!==getUserId()) ids.add(id); });
+  }
+  return ids;
+}
+async function fetchUserIdsByAgeGroup(age){
+  try{
+    const res=await fetchWithTimeout(`${SUPABASE_URL}profiles?age_group=eq.${age}&select=user_id`,{headers:{'apikey':SUPABASE_KEY}},6000);
+    if(!res.ok) return new Set();
+    const rows=await res.json();
+    return new Set(rows.map(r=>r.user_id));
+  }catch(e){ return new Set(); }
 }
 
 // 起動時に、公開されている最新のファイルとバージョンを比べて、古ければ自動でリロードする
@@ -1555,7 +1801,8 @@ function renderRankingSection(){
       <div class="ranking-actions">
         <button id="changeNicknameBtn" class="ranking-link-btn">${t('rankingChangeNickname')}</button>
         <button id="leaveRankingBtn" class="ranking-link-btn">${t('rankingLeave')}</button>
-      </div>`;
+      </div>
+      <button id="manageGroupBtn" class="ranking-join-btn" style="margin-top:10px;">${t('groupBtn')}</button>`;
     document.getElementById('changeNicknameBtn').addEventListener('click',()=>showNicknameModal(false));
     document.getElementById('leaveRankingBtn').addEventListener('click',()=>{
       if(confirm(t('rankingLeaveConfirm'))){
@@ -1563,32 +1810,273 @@ function renderRankingSection(){
         renderRankingSection();
       }
     });
+    document.getElementById('manageGroupBtn').addEventListener('click',showGroupOverlay);
   }else{
     el.innerHTML=`<button id="joinRankingBtn" class="ranking-join-btn">${t('rankingJoin')}</button>`;
     document.getElementById('joinRankingBtn').addEventListener('click',()=>showNicknameModal(true));
   }
 }
 
-function showNicknameModal(isJoinFlow){
+let selectedAgeGroup=''; // ''=答えない/未選択
+function setActiveAgeButton(age){
+  selectedAgeGroup=age;
+  document.querySelectorAll('#ageGroupRow .age-btn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.age===age);
+  });
+}
+document.getElementById('ageGroupRow').addEventListener('click',(e)=>{
+  const btn=e.target.closest('.age-btn');
+  if(!btn) return;
+  setActiveAgeButton(btn.dataset.age);
+});
+
+async function showNicknameModal(isJoinFlow){
   document.getElementById('nicknameInput').value=getNickname();
   document.getElementById('nicknameOverlay').dataset.joinFlow=isJoinFlow?'1':'0';
+  document.getElementById('friendCodeInput').value=getFriendCode();
+  setActiveAgeButton(getAgeGroup());
   document.getElementById('nicknameOverlay').classList.add('show');
+  // 既にランキング参加中なら、最新のプロフィール(合言葉・年代)を取得して埋める
+  if(isRankingOptedIn()){
+    const p=await ensureProfile();
+    if(p){
+      document.getElementById('friendCodeInput').value=p.friend_code||getFriendCode();
+      setActiveAgeButton(p.age_group||'');
+    }
+  }
 }
 function hideNicknameModal(){
   document.getElementById('nicknameOverlay').classList.remove('show');
 }
-document.getElementById('nicknameConfirmBtn').addEventListener('click',()=>{
+document.getElementById('nicknameConfirmBtn').addEventListener('click',async ()=>{
   const val=document.getElementById('nicknameInput').value.trim();
   if(!val){ alert(t('nicknameEmptyAlert')); return; }
   if(containsInappropriateWord(val)){ alert(t('nicknameInappropriateAlert')); return; }
+
+  let code=document.getElementById('friendCodeInput').value.trim().toUpperCase();
+  if(!code) code=generateFriendCode();
+  if(!/^[A-Z0-9]{4,10}$/.test(code)){ alert(t('friendCodeInvalidAlert')); return; }
+  if(containsInappropriateWord(code)){ alert(t('nicknameInappropriateAlert')); return; }
+  if(code!==getFriendCode()){
+    const taken=await isFriendCodeTaken(code);
+    if(taken){ alert(t('friendCodeTakenAlert')); return; }
+  }
+
   setNickname(val.slice(0,10));
   setRankingOptedIn(true);
+  setFriendCode(code);
+  setAgeGroup(selectedAgeGroup);
+  await upsertProfile({nickname:val.slice(0,10),friend_code:code,age_group:selectedAgeGroup||null,updated_at:new Date().toISOString()});
   hideNicknameModal();
   renderRankingSection();
+
+  if(pendingJoinCode){
+    await attemptJoinByCode(pendingJoinCode);
+    pendingJoinCode=null;
+  }
+  if(nicknameModalIsStartupFlow){
+    // 招待リンク経由の起動だったので、ここで通常の起動の流れ(チュートリアル or 難易度選択)を続ける
+    nicknameModalIsStartupFlow=false;
+    let seen=null;
+    try{ seen=localStorage.getItem(TUTORIAL_SEEN_KEY); }catch(e){}
+    if(!seen){
+      pendingFirstLaunch=true;
+      showTutorial();
+    }else{
+      showDiffPopup();
+    }
+  }
 });
-document.getElementById('nicknameCancelBtn').addEventListener('click',hideNicknameModal);
+document.getElementById('nicknameCancelBtn').addEventListener('click',()=>{
+  hideNicknameModal();
+  if(nicknameModalIsStartupFlow){
+    nicknameModalIsStartupFlow=false;
+    pendingJoinCode=null;
+    let seen=null;
+    try{ seen=localStorage.getItem(TUTORIAL_SEEN_KEY); }catch(e){}
+    if(!seen){
+      pendingFirstLaunch=true;
+      showTutorial();
+    }else{
+      showDiffPopup();
+    }
+  }
+});
+
+// ---------- グループ管理画面 ----------
+async function showGroupOverlay(){
+  document.getElementById('groupOverlay').classList.add('show');
+  await renderGroupOverlay();
+}
+function hideGroupOverlay(){
+  document.getElementById('groupOverlay').classList.remove('show');
+}
+document.getElementById('groupOverlayClose').addEventListener('click',hideGroupOverlay);
+document.getElementById('groupOverlayCloseBottom').addEventListener('click',hideGroupOverlay);
+
+async function renderGroupOverlay(){
+  document.getElementById('myFriendCodeText').textContent=getFriendCode()||'------';
+  const listEl=document.getElementById('groupList');
+  listEl.innerHTML=`<div style="text-align:center;color:var(--ink-soft);">${t('rankingLoading')}</div>`;
+  const groups=await fetchMyGroups();
+  if(!groups.length){
+    listEl.innerHTML='';
+  }else{
+    const cards=await Promise.all(groups.map(async g=>{
+      const members=await fetchGroupMemberIds(g.id);
+      return `
+        <div class="group-card">
+          <div class="g-name">${escapeHtml(g.name)}</div>
+          <div class="g-meta">${t('groupInviteCodeLabel')} <b>${escapeHtml(g.invite_code)}</b> ・ ${t('groupMembersCount',{count:members.size})}</div>
+          <div class="g-btn-row">
+            <button class="g-share" data-gname="${escapeHtml(g.name)}" data-gcode="${escapeHtml(g.invite_code)}">🔗 ${t('groupShareBtn')}</button>
+            <button class="g-leave" data-gid="${g.id}">${t('groupLeaveBtn')}</button>
+          </div>
+        </div>`;
+    }));
+    listEl.innerHTML=cards.join('');
+    listEl.querySelectorAll('.g-leave').forEach(btn=>{
+      btn.addEventListener('click',()=>leaveGroup(btn.dataset.gid));
+    });
+    listEl.querySelectorAll('.g-share').forEach(btn=>{
+      btn.addEventListener('click',()=>shareGroupInvite(btn.dataset.gname,btn.dataset.gcode));
+    });
+  }
+  // 「合言葉で誘う」の対象グループ選択肢を更新
+  const sel=document.getElementById('inviteTargetGroupSelect');
+  sel.innerHTML=groups.map(g=>`<option value="${g.id}">${escapeHtml(g.name)}</option>`).join('');
+}
+
+document.getElementById('createGroupBtn').addEventListener('click',async ()=>{
+  const nameInput=document.getElementById('newGroupNameInput');
+  const name=nameInput.value.trim();
+  if(!name){ alert(t('groupNameEmptyAlert')); return; }
+  if(containsInappropriateWord(name)){ alert(t('nicknameInappropriateAlert')); return; }
+  const myGroups=await fetchMyGroups();
+  if(myGroups.length>=MAX_GROUPS){ alert(t('groupLimitAlert')); return; }
+  try{
+    const code=generateInviteCode();
+    const res=await fetchWithTimeout(`${SUPABASE_URL}groups`,{
+      method:'POST',
+      headers:{'apikey':SUPABASE_KEY,'Content-Type':'application/json','Prefer':'return=representation'},
+      body:JSON.stringify({name:name.slice(0,12),invite_code:code,created_by:getUserId()})
+    },6000);
+    if(!res.ok) throw new Error('create group failed');
+    const rows=await res.json();
+    const group=rows[0];
+    await fetchWithTimeout(`${SUPABASE_URL}group_members`,{
+      method:'POST',
+      headers:{'apikey':SUPABASE_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
+      body:JSON.stringify({group_id:group.id,user_id:getUserId(),nickname:getNickname()})
+    },6000);
+    nameInput.value='';
+    await renderGroupOverlay();
+  }catch(e){ console.error('グループ作成に失敗しました',e); alert(t('groupErrorAlert')); }
+});
+
+document.getElementById('joinGroupBtn').addEventListener('click',async ()=>{
+  const codeInput=document.getElementById('joinGroupCodeInput');
+  const code=codeInput.value.trim().toUpperCase();
+  if(!code) return;
+  const myGroups=await fetchMyGroups();
+  if(myGroups.length>=MAX_GROUPS){ alert(t('groupLimitAlert')); return; }
+  try{
+    const res=await fetchWithTimeout(`${SUPABASE_URL}groups?invite_code=eq.${encodeURIComponent(code)}&select=id,name`,{headers:{'apikey':SUPABASE_KEY}},6000);
+    if(!res.ok) throw new Error('lookup failed');
+    const rows=await res.json();
+    if(!rows.length){ alert(t('groupNotFoundAlert')); return; }
+    const group=rows[0];
+    if(myGroups.some(g=>g.id===group.id)){ alert(t('groupAlreadyJoinedAlert')); return; }
+    await fetchWithTimeout(`${SUPABASE_URL}group_members`,{
+      method:'POST',
+      headers:{'apikey':SUPABASE_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
+      body:JSON.stringify({group_id:group.id,user_id:getUserId(),nickname:getNickname()})
+    },6000);
+    codeInput.value='';
+    await renderGroupOverlay();
+  }catch(e){ console.error('グループ参加に失敗しました',e); alert(t('groupErrorAlert')); }
+});
+
+document.getElementById('inviteByFriendCodeBtn').addEventListener('click',async ()=>{
+  const targetGroupId=document.getElementById('inviteTargetGroupSelect').value;
+  const codeInput=document.getElementById('inviteFriendCodeInput');
+  const code=codeInput.value.trim().toUpperCase();
+  if(!targetGroupId || !code) return;
+  try{
+    const res=await fetchWithTimeout(`${SUPABASE_URL}profiles?friend_code=eq.${encodeURIComponent(code)}&select=user_id,nickname`,{headers:{'apikey':SUPABASE_KEY}},6000);
+    if(!res.ok) throw new Error('lookup failed');
+    const rows=await res.json();
+    if(!rows.length){ alert(t('friendCodeNotFoundAlert')); return; }
+    const target=rows[0];
+    if(target.user_id===getUserId()){ alert(t('friendCodeSelfAlert')); return; }
+    const targetGroupsRes=await fetchWithTimeout(`${SUPABASE_URL}group_members?user_id=eq.${target.user_id}&select=group_id`,{headers:{'apikey':SUPABASE_KEY}},6000);
+    const targetGroups=targetGroupsRes.ok ? await targetGroupsRes.json() : [];
+    if(targetGroups.some(g=>g.group_id===targetGroupId)){ alert(t('groupAlreadyJoinedAlert')); return; }
+    if(targetGroups.length>=MAX_GROUPS){ alert(t('targetGroupFullAlert')); return; }
+    await fetchWithTimeout(`${SUPABASE_URL}group_members`,{
+      method:'POST',
+      headers:{'apikey':SUPABASE_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
+      body:JSON.stringify({group_id:targetGroupId,user_id:target.user_id,nickname:target.nickname})
+    },6000);
+    codeInput.value='';
+    alert(t('inviteSuccessAlert',{name:target.nickname}));
+    await renderGroupOverlay();
+  }catch(e){ console.error('招待に失敗しました',e); alert(t('groupErrorAlert')); }
+});
+
+async function leaveGroup(groupId){
+  if(!confirm(t('groupLeaveConfirm'))) return;
+  try{
+    await fetchWithTimeout(`${SUPABASE_URL}group_members?group_id=eq.${groupId}&user_id=eq.${getUserId()}`,{
+      method:'DELETE',
+      headers:{'apikey':SUPABASE_KEY}
+    },6000);
+    await renderGroupOverlay();
+  }catch(e){ console.error('グループ脱退に失敗しました',e); alert(t('groupErrorAlert')); }
+}
+
+// 招待リンクを作って共有する
+async function shareGroupInvite(name,code){
+  const url=location.origin+location.pathname+'?join='+encodeURIComponent(code);
+  const text=t('shareGroupInviteText',{name});
+  if(navigator.share){
+    try{ await navigator.share({title:t('appTitle'),text,url}); }catch(e){ /* キャンセル時は何もしない */ }
+    return;
+  }
+  const fullText=`${text}\n${url}`;
+  try{
+    await navigator.clipboard.writeText(fullText);
+    alert(t('shareGroupCopiedAlert'));
+  }catch(e){
+    prompt(t('sharePromptText'),fullText);
+  }
+}
+
+// 招待コードでグループに参加する(招待リンクから来た場合に使う。手入力の参加ボタンとは別処理)
+async function attemptJoinByCode(code){
+  if(!code) return;
+  try{
+    const myGroups=await fetchMyGroups();
+    if(myGroups.some(g=>g.invite_code===code)) return; // 既に参加済み
+    if(myGroups.length>=MAX_GROUPS){ alert(t('groupLimitAlert')); return; }
+    const res=await fetchWithTimeout(`${SUPABASE_URL}groups?invite_code=eq.${encodeURIComponent(code)}&select=id,name`,{headers:{'apikey':SUPABASE_KEY}},6000);
+    if(!res.ok) return;
+    const rows=await res.json();
+    if(!rows.length) return;
+    const group=rows[0];
+    await fetchWithTimeout(`${SUPABASE_URL}group_members`,{
+      method:'POST',
+      headers:{'apikey':SUPABASE_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
+      body:JSON.stringify({group_id:group.id,user_id:getUserId(),nickname:getNickname()})
+    },6000);
+    alert(t('groupJoinedViaLinkAlert',{name:group.name}));
+  }catch(e){ console.error('招待リンクからの参加に失敗しました',e); }
+}
 
 // ---------- 今日のランキング表示 ----------
+let rankingMateIds=new Set();
+let rankingFullList=[];
+
 async function showTodayRanking(){
   const d=DIFFICULTIES[difficulty];
   const listEl=document.getElementById('rankingViewList');
@@ -1596,34 +2084,70 @@ async function showTodayRanking(){
   listEl.innerHTML=`<div style="text-align:center;color:var(--ink-soft);">${t('rankingLoading')}</div>`;
   document.getElementById('rankingViewOverlay').classList.add('show');
   try{
-    const fullList=await supabaseFetchFullBoard(dateKey(new Date()),difficulty);
-    if(!fullList.length){
-      listEl.innerHTML=`<div style="text-align:center;color:var(--ink-soft);">${t('rankingNoData')}</div>`;
-      return;
-    }
-    const topRows=fullList.slice(0,7);
-    const rowHtml=(r,rank)=>{
-      const isYou=r.user_id && r.user_id===getUserId();
-      return `
-      <div class="ranking-row${isYou?' ranking-row-you':''}">
-        <span class="ranking-rank">${rank}${t('positionSuffix')}</span>
-        <span class="ranking-name">${escapeHtml(r.nickname)}${isYou?` <span class="you-badge">${t('youBadge')}</span>`:''}</span>
-        <span class="ranking-score">${r.score}${t('pointsSuffix')}</span>
-      </div>`;
-    };
-    let html=topRows.map((r,i)=>rowHtml(r,i+1)).join('');
-
-    // 自分が上位7位より下にいたら、点線で区切って自分の順位も出す
-    const myIndex=fullList.findIndex(r=>r.user_id && r.user_id===getUserId());
-    if(myIndex>=7){
-      html+='<div class="ranking-sep">┈┈┈┈┈┈┈┈┈┈┈┈┈┈</div>';
-      html+=rowHtml(fullList[myIndex],myIndex+1);
-    }
-    listEl.innerHTML=html;
+    rankingFullList=await supabaseFetchFullBoard(dateKey(new Date()),difficulty);
+    rankingMateIds = isRankingOptedIn() ? await fetchAllMyGroupMateIds() : new Set();
+    await renderCategorySelect();
+    await renderRankingForCategory(document.getElementById('rankingCategorySelect').value);
   }catch(e){
     console.error('ランキング表示でエラーが発生しました',e);
     listEl.innerHTML=`<div style="text-align:center;color:var(--ink-soft);">${t('rankingLoadError')}</div>`;
   }
+}
+
+async function renderCategorySelect(){
+  const sel=document.getElementById('rankingCategorySelect');
+  const options=[`<option value="national">${t('categoryNational')}</option>`];
+  options.push(`<option value="age:senior">${t('ageSenior')}</option>`);
+  options.push(`<option value="age:adult">${t('ageAdult')}</option>`);
+  options.push(`<option value="age:youth">${t('ageYouth')}</option>`);
+  if(isRankingOptedIn()){
+    const groups=await fetchMyGroups();
+    groups.forEach(g=>{
+      options.push(`<option value="group:${g.id}">${t('categoryGroupPrefix')}${escapeHtml(g.name)}</option>`);
+    });
+  }
+  sel.innerHTML=options.join('');
+  sel.onchange=()=>renderRankingForCategory(sel.value);
+}
+
+async function renderRankingForCategory(category){
+  const listEl=document.getElementById('rankingViewList');
+  listEl.innerHTML=`<div style="text-align:center;color:var(--ink-soft);">${t('rankingLoading')}</div>`;
+
+  let rows=rankingFullList;
+  if(category && category!=='national'){
+    let idSet=new Set();
+    if(category.startsWith('age:')){
+      idSet=await fetchUserIdsByAgeGroup(category.slice(4));
+    }else if(category.startsWith('group:')){
+      idSet=await fetchGroupMemberIds(category.slice(6));
+    }
+    rows=rankingFullList.filter(r=>r.user_id && idSet.has(r.user_id));
+  }
+
+  if(!rows.length){
+    listEl.innerHTML=`<div style="text-align:center;color:var(--ink-soft);">${t('rankingNoData')}</div>`;
+    return;
+  }
+  const topRows=rows.slice(0,7);
+  const rowHtml=(r,rank)=>{
+    const isYou=r.user_id && r.user_id===getUserId();
+    const isMate=!isYou && r.user_id && rankingMateIds.has(r.user_id);
+    return `
+    <div class="ranking-row${isYou?' ranking-row-you':(isMate?' ranking-row-mate':'')}">
+      <span class="ranking-rank">${rank}${t('positionSuffix')}</span>
+      <span class="ranking-name">${escapeHtml(r.nickname)}${isYou?` <span class="you-badge">${t('youBadge')}</span>`:''}${isMate?` <span class="mate-badge">${t('mateBadge')}</span>`:''}</span>
+      <span class="ranking-score">${r.score}${t('pointsSuffix')}</span>
+    </div>`;
+  };
+  let html=topRows.map((r,i)=>rowHtml(r,i+1)).join('');
+
+  const myIndex=rows.findIndex(r=>r.user_id && r.user_id===getUserId());
+  if(myIndex>=7){
+    html+='<div class="ranking-sep">┈┈┈┈┈┈┈┈┈┈┈┈┈┈</div>';
+    html+=rowHtml(rows[myIndex],myIndex+1);
+  }
+  listEl.innerHTML=html;
 }
 document.getElementById('resultRankingBtn').addEventListener('click',showTodayRanking);
 document.getElementById('rankingViewClose').addEventListener('click',()=>{
@@ -1633,6 +2157,8 @@ document.getElementById('rankingViewClose').addEventListener('click',()=>{
 // ---------- あそびかた(チュートリアル) ----------
 const TUTORIAL_SEEN_KEY='puzzle-tutorial-seen';
 let pendingFirstLaunch=false;
+let pendingJoinCode=null; // 招待リンクから来た場合の、参加待ちの招待コード
+let nicknameModalIsStartupFlow=false; // 起動時に(招待リンク経由で)ニックネーム登録を先に出したかどうか
 const tutorialOverlay=document.getElementById('tutorialOverlay');
 function showTutorial(){ tutorialOverlay.classList.add('show'); }
 function hideTutorial(){ tutorialOverlay.classList.remove('show'); }
@@ -1883,6 +2409,27 @@ document.getElementById('langToggleBtn').addEventListener('click',toggleLanguage
   applyLanguage();
   todayLabel();
   await loadRecords();
+
+  // 招待リンク(?join=コード)経由で開かれたかどうかを確認
+  let joinCode=null;
+  try{ joinCode=new URLSearchParams(location.search).get('join'); }catch(e){}
+  if(joinCode){
+    joinCode=joinCode.toUpperCase();
+    try{ history.replaceState(null,'',location.pathname); }catch(e){} // リロードで再参加しないようURLを綺麗にする
+  }
+
+  if(joinCode && !isRankingOptedIn()){
+    // まだニックネームが無い人は、先にニックネーム登録してもらってから自動で参加させる
+    pendingJoinCode=joinCode;
+    nicknameModalIsStartupFlow=true;
+    showNicknameModal(true);
+    return;
+  }
+  if(joinCode && isRankingOptedIn()){
+    await ensureProfile();
+    await attemptJoinByCode(joinCode);
+  }
+
   let seen=null;
   try{ seen=localStorage.getItem(TUTORIAL_SEEN_KEY); }catch(e){}
   if(!seen){
