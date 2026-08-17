@@ -139,6 +139,7 @@
   .diff-card{
     background:var(--paper);border-radius:22px;padding:26px 22px;
     width:100%;max-width:400px;box-shadow:0 10px 30px rgba(0,0,0,.25);text-align:center;
+    max-height:85dvh;overflow-y:auto;
   }
   .diff-card h2{margin:0 0 4px;font-size:24px;font-weight:900;}
   .diff-card p{margin:0 0 18px;font-size:16px;color:var(--ink-soft);}
@@ -284,7 +285,7 @@
       <div class="score-value" id="scoreValue">0</div>
     </div>
     <div class="time-box">
-      <div class="score-label">経過時間</div>
+      <div class="score-label" id="timeLabel">経過時間</div>
       <div class="time-value" id="timeValue">00:00</div>
     </div>
     <button class="cal-btn" id="openTutorial" aria-label="あそびかた">❓</button>
@@ -319,8 +320,9 @@
     </button>
     <button class="diff-choice" data-d="normal"><span class="name">ふつう</span><span class="desc">7色・6×6マス・最初は一番下の行から</span></button>
     <button class="diff-choice" data-d="hard"><span class="name">むずかしい</span><span class="desc">7色・8×9マス・最初は一番下の行から</span></button>
+    <button class="diff-choice" data-d="infinite"><span class="name">♾️ むげん</span><span class="desc">30秒間で何個消せるかチャレンジ・上から無限に降ってくる</span></button>
     <div class="ranking-section" id="rankingSection"></div>
-    <div class="version-tag">v1.0.2</div>
+    <div class="version-tag">v1.1.0</div>
   </div>
 </div>
 
@@ -398,7 +400,8 @@
 const DIFFICULTIES={
   easy:  {label:'かんたん', colors:5, rows:6, cols:6, color:'var(--c1)', scoreMult:0.7, delayedMerges:0, firstTapBottomRow:false, targetTime:60,  timeBonusPerSec:2, maxStartGroupSize:null, perfectBonus:200},
   normal:{label:'ふつう',   colors:7, rows:6, cols:6, color:'var(--c2)', scoreMult:1,   delayedMerges:1, firstTapBottomRow:true,  targetTime:90,  timeBonusPerSec:4, maxStartGroupSize:9,   perfectBonus:400},
-  hard:  {label:'むずかしい',colors:7, rows:9, cols:8, color:'var(--c5)', scoreMult:1.4, delayedMerges:3, firstTapBottomRow:true,  targetTime:150, timeBonusPerSec:8, maxStartGroupSize:9,   perfectBonus:800}
+  hard:  {label:'むずかしい',colors:7, rows:9, cols:8, color:'var(--c5)', scoreMult:1.4, delayedMerges:3, firstTapBottomRow:true,  targetTime:150, timeBonusPerSec:8, maxStartGroupSize:9,   perfectBonus:800},
+  infinite:{label:'むげん', colors:7, rows:9, cols:8, color:'var(--c4)', scoreMult:1.4, delayedMerges:0, firstTapBottomRow:true,  targetTime:30,  timeBonusPerSec:0, maxStartGroupSize:9,   perfectBonus:0, isInfinite:true}
 };
 const STORAGE_KEY='puzzle-daily-records';
 const SYMBOLS=['●','■','▲','◆','★','✚','✖'];
@@ -551,6 +554,23 @@ function startTimer(){
 function stopTimer(){
   clearInterval(timerHandle);
   return Math.floor((Date.now()-startTime)/1000);
+}
+
+// むげんモード用の、逆にカウントダウンしていくタイマー。0になったら自動でラウンド終了
+function startCountdown(seconds,onTimeUp){
+  clearInterval(timerHandle);
+  startTime=Date.now();
+  const totalMs=seconds*1000;
+  timeEl.textContent=fmtTime(seconds);
+  timerHandle=setInterval(()=>{
+    const remainMs=totalMs-(Date.now()-startTime);
+    const remainSec=Math.max(0,Math.ceil(remainMs/1000));
+    timeEl.textContent=fmtTime(remainSec);
+    if(remainMs<=0){
+      clearInterval(timerHandle);
+      onTimeUp();
+    }
+  },200);
 }
 
 // ---------- grid logic ----------
@@ -710,8 +730,9 @@ function capGroupSizes(grid,maxSize){
 }
 
 function makeGrid(){
-  const GEN_RETRIES=200, SOLVE_ATTEMPTS=40;
   const d=DIFFICULTIES[difficulty]||{};
+  if(d.isInfinite) return makeInfiniteGrid();
+  const GEN_RETRIES=200, SOLVE_ATTEMPTS=40;
   const delayedCount = d.delayedMerges || 0;
   const requireFirstBottom = !!d.firstTapBottomRow;
   const maxStart = d.maxStartGroupSize || null;
@@ -723,6 +744,30 @@ function makeGrid(){
     if(trySolveFull(g,SOLVE_ATTEMPTS,requireFirstBottom)) return g;
   }
   return tileBoard(); // 万一見つからない場合の保険(ごくまれ)
+}
+
+// むげんモード用: 全消し保証は不要。最初の一手が一番下の行にあることだけ確認する軽量版
+function makeInfiniteGrid(){
+  const d=DIFFICULTIES.infinite;
+  const maxStart=d.maxStartGroupSize;
+  for(let i=0;i<50;i++){
+    let g=tileBoard();
+    if(maxStart) g=capGroupSizes(g,maxStart);
+    const bottomGroups=allGroups(g).filter(gr=>gr.some(([r,c])=>r===ROWS-1));
+    if(bottomGroups.length>0) return g;
+  }
+  return tileBoard();
+}
+
+// むげんモード用: 空いた上の方に新しい色を無限に補充する
+function refillColumns(grid){
+  for(let c=0;c<COLS;c++){
+    for(let r=0;r<ROWS;r++){
+      if(grid[r][c]===null) grid[r][c]=randColor();
+      else break; // 上から順にnullが並んでいる前提なので、埋まってるマスに当たったら次の列へ
+    }
+  }
+  return grid;
 }
 function neighbors(r,c){return [[r-1,c],[r+1,c],[r,c-1],[r,c+1]];}
 function findGroup(g,r,c){
@@ -830,14 +875,28 @@ async function onCellTap(e){
 
     for(const [gr,gc] of group) grid[gr][gc]=null;
     grid=applyGravityAndCompact(grid);
-    render();
 
-    if(!hasMove(grid)){
-      const isPerfect = grid.every(row=>row.every(cell=>cell===null));
-      await finishRound(isPerfect ? 'パーフェクト!!' : 'おつかれさま!', true, isPerfect);
-    }else if(penalized){
-      msgEl.textContent='ヒントを使った次だったから、スコアが半分になったよ';
-      setTimeout(()=>{ if(!roundOver) msgEl.textContent='同じ色を3つ以上つなげてタップしてね'; },2200);
+    const d=DIFFICULTIES[difficulty];
+    if(d.isInfinite){
+      // むげんモードは上から新しい色を補充し続けるが、それでも消せる場所が無くなったらそこで終了
+      refillColumns(grid);
+      if(d.maxStartGroupSize) capGroupSizes(grid,d.maxStartGroupSize);
+      render();
+      if(!hasMove(grid)){
+        await finishInfiniteStuck();
+      }else if(penalized){
+        msgEl.textContent='ヒントを使った次だったから、スコアが半分になったよ';
+        setTimeout(()=>{ if(!roundOver) msgEl.textContent='どんどんタップして消していこう!'; },1500);
+      }
+    }else{
+      render();
+      if(!hasMove(grid)){
+        const isPerfect = grid.every(row=>row.every(cell=>cell===null));
+        await finishRound(isPerfect ? 'パーフェクト!!' : 'おつかれさま!', true, isPerfect);
+      }else if(penalized){
+        msgEl.textContent='ヒントを使った次だったから、スコアが半分になったよ';
+        setTimeout(()=>{ if(!roundOver) msgEl.textContent='同じ色を3つ以上つなげてタップしてね'; },2200);
+      }
     }
   }catch(err){
     console.error('パズル処理でエラーが発生しました',err);
@@ -1114,12 +1173,49 @@ function startGame(diff){
   firstMoveDone=false;
   giveupBtn.disabled=false;
   hintBtn.disabled=false;
+  document.getElementById('timeLabel').textContent = d.isInfinite ? 'のこり時間' : '経過時間';
   msgEl.textContent = DIFFICULTIES[diff].firstTapBottomRow
     ? 'さいしょは、一番下の行をタップしてね'
     : '同じ色を3つ以上つなげてタップしてね';
   render();
-  startTimer();
+  if(d.isInfinite){
+    startCountdown(d.targetTime, onInfiniteTimeUp);
+  }else{
+    startTimer();
+  }
   hideDiffPopup();
+}
+
+async function onInfiniteTimeUp(){
+  if(roundOver) return;
+  roundOver=true;
+  giveupBtn.disabled=true;
+  hintBtn.disabled=true;
+  const d=DIFFICULTIES[difficulty];
+  const finalScore=score;
+  msgEl.textContent=`タイムアップ! スコア ${finalScore} でした`;
+  await recordRound(finalScore,d.targetTime);
+  if(isRankingOptedIn() && finalScore>0){
+    supabaseInsertScore(getNickname(),difficulty,finalScore,d.targetTime);
+  }
+  showResultPopup('タイムアップ!',finalScore,d.targetTime,finalScore,0,false,0);
+}
+
+// むげんモードで、補充しても消せる場所が無くなった時点で終了する
+async function finishInfiniteStuck(){
+  if(roundOver) return;
+  roundOver=true;
+  giveupBtn.disabled=true;
+  hintBtn.disabled=true;
+  const elapsed=stopTimer(); // カウントダウンを止めて、その時点までの経過秒数を取得
+  const finalScore=score;
+  const prefix='おつかれさま!全部消せなくなっちゃったよ!';
+  msgEl.textContent=`${prefix} スコア ${finalScore} でした`;
+  await recordRound(finalScore,elapsed);
+  if(isRankingOptedIn() && finalScore>0){
+    supabaseInsertScore(getNickname(),difficulty,finalScore,elapsed);
+  }
+  showResultPopup(prefix,finalScore,elapsed,finalScore,0,false,0);
 }
 
 function showDiffPopup(){
