@@ -175,6 +175,12 @@
   .ranking-row{
     display:flex;align-items:center;gap:10px;background:#fff;border-radius:12px;
     padding:12px 14px;margin-bottom:8px;box-shadow:0 1px 4px rgba(59,50,42,.08);
+    border:2px solid transparent;
+  }
+  .ranking-row-you{border-color:var(--shu);background:#fff6f1;}
+  .you-badge{
+    display:inline-block;font-size:11px;background:var(--shu);color:#fff;
+    padding:2px 8px;border-radius:999px;margin-left:6px;font-weight:700;vertical-align:middle;
   }
   .ranking-rank{font-weight:900;color:var(--shu);width:38px;flex-shrink:0;}
   .ranking-name{flex:1;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
@@ -390,6 +396,7 @@ const SUPABASE_URL='https://jhrwpwpzxgxlvbartvqr.supabase.co/rest/v1/';
 const SUPABASE_KEY='sb_publishable_AaiMwnPXCL0oCfvQRqi9wA_x3Bl33da';
 const NICKNAME_KEY='puzzle-nickname';
 const RANKING_OPTIN_KEY='puzzle-ranking-optin';
+const USER_ID_KEY='puzzle-user-id';
 
 function getNickname(){ try{ return localStorage.getItem(NICKNAME_KEY)||''; }catch(e){ return ''; } }
 function setNickname(name){ try{ localStorage.setItem(NICKNAME_KEY,name); }catch(e){} }
@@ -397,26 +404,63 @@ function isRankingOptedIn(){ try{ return localStorage.getItem(RANKING_OPTIN_KEY)
 function setRankingOptedIn(v){ try{ localStorage.setItem(RANKING_OPTIN_KEY, v?'1':'0'); }catch(e){} }
 function escapeHtml(s){ return s.replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
+// 画面には出さない、端末ごとの一意なID。同じニックネームの人がいても別人として区別するために使う
+function getUserId(){
+  try{
+    let id=localStorage.getItem(USER_ID_KEY);
+    if(!id){
+      id=(window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('u-'+Date.now()+'-'+Math.random().toString(36).slice(2,10));
+      localStorage.setItem(USER_ID_KEY,id);
+    }
+    return id;
+  }catch(e){
+    return 'u-temp-'+Math.random().toString(36).slice(2,10);
+  }
+}
+
+// タイムアウト付きfetch。通信がずっと終わらない時に画面が固まるのを防ぐ
+async function fetchWithTimeout(url,options,timeoutMs){
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),timeoutMs);
+  try{
+    return await fetch(url,{...options,signal:controller.signal});
+  }finally{
+    clearTimeout(timer);
+  }
+}
+
+// 同じ人(user_id)が複数あれば、いちばん高いスコアだけ残す。古いデータでuser_idが無い場合はニックネームで代用
+function dedupeTopByUser(rows,topN){
+  const bestByKey=new Map();
+  for(const r of rows){
+    const key=r.user_id || ('name:'+r.nickname);
+    const cur=bestByKey.get(key);
+    if(!cur || r.score>cur.score) bestByKey.set(key,r);
+  }
+  return Array.from(bestByKey.values()).sort((a,b)=>b.score-a.score).slice(0,topN);
+}
+
 async function supabaseInsertScore(nickname,diff,scoreVal,timeSec){
   try{
-    await fetch(SUPABASE_URL+'scores',{
+    await fetchWithTimeout(SUPABASE_URL+'scores',{
       method:'POST',
       headers:{
         'apikey':SUPABASE_KEY,
-        'Authorization':'Bearer '+SUPABASE_KEY,
         'Content-Type':'application/json',
         'Prefer':'return=minimal'
       },
-      body:JSON.stringify({nickname,difficulty:diff,score:scoreVal,time_sec:timeSec})
-    });
+      body:JSON.stringify({nickname,difficulty:diff,score:scoreVal,time_sec:timeSec,user_id:getUserId()})
+    },6000);
   }catch(e){ console.error('ランキング送信に失敗しました',e); }
 }
 async function supabaseFetchTop(playDate,diff,limit){
   try{
-    const url=`${SUPABASE_URL}scores?play_date=eq.${playDate}&difficulty=eq.${diff}&select=nickname,score,time_sec&order=score.desc&limit=${limit}`;
-    const res=await fetch(url,{headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY}});
+    // 重複排除の余地を持たせるため、少し多めに取得してから同じ人ごとに最高点だけ残す
+    const url=`${SUPABASE_URL}scores?play_date=eq.${playDate}&difficulty=eq.${diff}&select=nickname,score,time_sec,user_id&order=score.desc&limit=50`;
+    const res=await fetchWithTimeout(url,{headers:{'apikey':SUPABASE_KEY}},6000);
     if(!res.ok) return [];
-    return await res.json();
+    const rows=await res.json();
+    return dedupeTopByUser(rows,limit);
   }catch(e){ console.error('ランキング取得に失敗しました',e); return []; }
 }
 
@@ -1106,21 +1150,29 @@ document.getElementById('nicknameCancelBtn').addEventListener('click',hideNickna
 // ---------- 今日のランキング表示 ----------
 async function showTodayRanking(){
   const d=DIFFICULTIES[difficulty];
-  document.getElementById('rankingViewTitle').textContent=`今日の「${d.label}」ランキング`;
   const listEl=document.getElementById('rankingViewList');
+  document.getElementById('rankingViewTitle').textContent = d ? `今日の「${d.label}」ランキング` : '今日のランキング';
   listEl.innerHTML='<div style="text-align:center;color:var(--ink-soft);">読み込み中…</div>';
   document.getElementById('rankingViewOverlay').classList.add('show');
-  const rows=await supabaseFetchTop(dateKey(new Date()),difficulty,5);
-  if(!rows.length){
-    listEl.innerHTML='<div style="text-align:center;color:var(--ink-soft);">まだ今日の記録がないみたい</div>';
-    return;
+  try{
+    const rows=await supabaseFetchTop(dateKey(new Date()),difficulty,5);
+    if(!rows.length){
+      listEl.innerHTML='<div style="text-align:center;color:var(--ink-soft);">まだ今日の記録がないみたい</div>';
+      return;
+    }
+    listEl.innerHTML=rows.map((r,i)=>{
+      const isYou=r.user_id && r.user_id===getUserId();
+      return `
+      <div class="ranking-row${isYou?' ranking-row-you':''}">
+        <span class="ranking-rank">${i+1}位</span>
+        <span class="ranking-name">${escapeHtml(r.nickname)}${isYou?' <span class="you-badge">あなた</span>':''}</span>
+        <span class="ranking-score">${r.score}点</span>
+      </div>`;
+    }).join('');
+  }catch(e){
+    console.error('ランキング表示でエラーが発生しました',e);
+    listEl.innerHTML='<div style="text-align:center;color:var(--ink-soft);">読み込みに失敗したみたい。もう一度試してみてね</div>';
   }
-  listEl.innerHTML=rows.map((r,i)=>`
-    <div class="ranking-row">
-      <span class="ranking-rank">${i+1}位</span>
-      <span class="ranking-name">${escapeHtml(r.nickname)}</span>
-      <span class="ranking-score">${r.score}点</span>
-    </div>`).join('');
 }
 document.getElementById('resultRankingBtn').addEventListener('click',showTodayRanking);
 document.getElementById('rankingViewClose').addEventListener('click',()=>{
@@ -1236,17 +1288,24 @@ function showDayDetail(key){
 
 // その日の「みんなのトップ3」を難易度ごとに取得して追記する(通信できなければ何も表示しない)
 async function fetchAndAppendDayRanking(key){
-  const sections=[];
-  for(const diff of Object.keys(DIFFICULTIES)){
-    const rows=await supabaseFetchTop(key,diff,3);
-    if(rows.length){
-      const list=rows.map((r,i)=>`${i+1}位 ${escapeHtml(r.nickname)}(${r.score}点)`).join('・');
-      sections.push(`<div class="day-ranking-line"><b>${DIFFICULTIES[diff].label}トップ3:</b> ${list}</div>`);
+  try{
+    const sections=[];
+    for(const diff of Object.keys(DIFFICULTIES)){
+      const rows=await supabaseFetchTop(key,diff,3);
+      if(rows.length){
+        const list=rows.map((r,i)=>{
+          const isYou=r.user_id && r.user_id===getUserId();
+          return `${i+1}位 ${escapeHtml(r.nickname)}${isYou?'(あなた)':''}(${r.score}点)`;
+        }).join('・');
+        sections.push(`<div class="day-ranking-line"><b>${DIFFICULTIES[diff].label}トップ3:</b> ${list}</div>`);
+      }
     }
-  }
-  if(sections.length){
-    dayDetail.insertAdjacentHTML('beforeend',
-      `<hr style="margin:10px 0;border:none;border-top:1px solid var(--paper-deep);">`+sections.join(''));
+    if(sections.length){
+      dayDetail.insertAdjacentHTML('beforeend',
+        `<hr style="margin:10px 0;border:none;border-top:1px solid var(--paper-deep);">`+sections.join(''));
+    }
+  }catch(e){
+    console.error('その日のランキング取得でエラーが発生しました',e);
   }
 }
 
