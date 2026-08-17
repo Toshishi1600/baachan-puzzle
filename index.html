@@ -154,6 +154,32 @@
     font-size:13px;font-weight:700;padding:4px 12px;border-radius:999px;
   }
   .version-tag{margin-top:16px;text-align:center;font-size:12px;color:var(--ink-soft);opacity:.6;}
+
+  .ranking-section{margin-top:16px;padding-top:16px;border-top:1px solid var(--paper-deep);}
+  .ranking-join-btn{
+    width:100%;background:var(--shu);color:#fff;border:none;border-radius:16px;
+    padding:14px;font-size:16px;font-weight:700;font-family:inherit;cursor:pointer;
+  }
+  .ranking-join-btn:active{transform:translateY(2px);}
+  .ranking-status{font-size:15px;color:var(--ink);text-align:center;margin-bottom:10px;}
+  .ranking-status b{color:var(--shu);}
+  .ranking-actions{display:flex;gap:8px;}
+  .ranking-link-btn{
+    flex:1;background:#fff;border:2px solid var(--paper-deep);color:var(--ink-soft);
+    border-radius:12px;padding:10px 4px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;
+  }
+  .nickname-input{
+    width:100%;padding:14px;font-size:17px;font-family:inherit;border:2px solid var(--paper-deep);
+    border-radius:14px;background:#fff;color:var(--ink);box-sizing:border-box;
+  }
+  .ranking-row{
+    display:flex;align-items:center;gap:10px;background:#fff;border-radius:12px;
+    padding:12px 14px;margin-bottom:8px;box-shadow:0 1px 4px rgba(59,50,42,.08);
+  }
+  .ranking-rank{font-weight:900;color:var(--shu);width:38px;flex-shrink:0;}
+  .ranking-name{flex:1;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .ranking-score{font-weight:900;font-variant-numeric:tabular-nums;}
+  .day-ranking-line{font-size:13px;margin-top:6px;line-height:1.6;}
   .tutorial-body{text-align:left;margin-bottom:20px;}
   .tutorial-body p{font-size:16px;line-height:1.8;margin:0 0 14px;color:var(--ink);}
   .tutorial-body b{color:var(--shu);}
@@ -275,7 +301,28 @@
     </button>
     <button class="diff-choice" data-d="normal"><span class="name">ふつう</span><span class="desc">7色・6×6マス・最初は一番下の行から</span></button>
     <button class="diff-choice" data-d="hard"><span class="name">むずかしい</span><span class="desc">7色・8×9マス・最初は一番下の行から</span></button>
+    <div class="ranking-section" id="rankingSection"></div>
     <div class="version-tag">v1.0.0</div>
+  </div>
+</div>
+
+<div class="overlay" id="nicknameOverlay">
+  <div class="diff-card">
+    <h2>ニックネームをきめてね</h2>
+    <p>ランキングに表示される名前だよ(あとから変更もできます)</p>
+    <input type="text" id="nicknameInput" maxlength="10" placeholder="例: トシシ" class="nickname-input">
+    <button class="newgame" id="nicknameConfirmBtn" style="width:100%;margin-top:14px;">けってい</button>
+    <button class="result-close" id="nicknameCancelBtn" style="width:100%;">やめる</button>
+  </div>
+</div>
+
+<div class="overlay" id="rankingViewOverlay">
+  <div class="cal-card">
+    <div class="cal-head">
+      <div class="cal-title" id="rankingViewTitle">今日のランキング</div>
+      <button id="rankingViewClose">✕</button>
+    </div>
+    <div id="rankingViewList" style="margin-top:12px;"></div>
   </div>
 </div>
 
@@ -308,6 +355,7 @@
     <div class="result-breakdown" id="resultBreakdown" style="display:none;"></div>
     <button class="result-demo" id="resultDemoBtn" style="display:none;">お手本を自動再生する</button>
     <button class="result-share" id="resultShareBtn">🏆 スコアを共有する</button>
+    <button class="result-share" id="resultRankingBtn">📊 今日のランキングを見る</button>
     <button class="result-newgame" id="resultNewGameBtn">新しいゲームを始める</button>
     <button class="result-close" id="resultCloseBtn">盤面を見る</button>
   </div>
@@ -336,6 +384,41 @@ const DIFFICULTIES={
 };
 const STORAGE_KEY='puzzle-daily-records';
 const SYMBOLS=['●','■','▲','◆','★','✚','✖'];
+
+// ---------- みんなのランキング(Supabase) ----------
+const SUPABASE_URL='https://jhrwpwpzxgxlvbartvqr.supabase.co/rest/v1/';
+const SUPABASE_KEY='sb_publishable_AaiMwnPXCL0oCfvQRqi9wA_x3Bl33da';
+const NICKNAME_KEY='puzzle-nickname';
+const RANKING_OPTIN_KEY='puzzle-ranking-optin';
+
+function getNickname(){ try{ return localStorage.getItem(NICKNAME_KEY)||''; }catch(e){ return ''; } }
+function setNickname(name){ try{ localStorage.setItem(NICKNAME_KEY,name); }catch(e){} }
+function isRankingOptedIn(){ try{ return localStorage.getItem(RANKING_OPTIN_KEY)==='1'; }catch(e){ return false; } }
+function setRankingOptedIn(v){ try{ localStorage.setItem(RANKING_OPTIN_KEY, v?'1':'0'); }catch(e){} }
+function escapeHtml(s){ return s.replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+async function supabaseInsertScore(nickname,diff,scoreVal,timeSec){
+  try{
+    await fetch(SUPABASE_URL+'scores',{
+      method:'POST',
+      headers:{
+        'apikey':SUPABASE_KEY,
+        'Authorization':'Bearer '+SUPABASE_KEY,
+        'Content-Type':'application/json',
+        'Prefer':'return=minimal'
+      },
+      body:JSON.stringify({nickname,difficulty:diff,score:scoreVal,time_sec:timeSec})
+    });
+  }catch(e){ console.error('ランキング送信に失敗しました',e); }
+}
+async function supabaseFetchTop(playDate,diff,limit){
+  try{
+    const url=`${SUPABASE_URL}scores?play_date=eq.${playDate}&difficulty=eq.${diff}&select=nickname,score,time_sec&order=score.desc&limit=${limit}`;
+    const res=await fetch(url,{headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY}});
+    if(!res.ok) return [];
+    return await res.json();
+  }catch(e){ console.error('ランキング取得に失敗しました',e); return []; }
+}
 
 let difficulty=null;
 let ROWS=6, COLS=6, COLORS=5;
@@ -720,6 +803,10 @@ async function finishRound(prefix,allowTimeBonus){
     ? `${prefix} スコア ${finalScore}(きほん${score}+はやさボーナス${timeBonus})・時間 ${fmtTime(elapsed)} でした`
     : `${prefix} スコア ${finalScore}・時間 ${fmtTime(elapsed)} でした`;
   await recordRound(finalScore,elapsed);
+  // ランキング参加中なら、何か1つでも消せていればスコアを送信する(通信失敗しても無視)
+  if(isRankingOptedIn() && finalScore>0){
+    supabaseInsertScore(getNickname(),difficulty,finalScore,elapsed);
+  }
   showResultPopup(prefix,finalScore,elapsed,score,timeBonus);
 }
 
@@ -968,8 +1055,77 @@ function startGame(diff){
   hideDiffPopup();
 }
 
-function showDiffPopup(){document.getElementById('diffOverlay').classList.add('show');}
+function showDiffPopup(){
+  renderRankingSection();
+  document.getElementById('diffOverlay').classList.add('show');
+}
 function hideDiffPopup(){document.getElementById('diffOverlay').classList.remove('show');}
+
+// ---------- ランキング参加まわりのUI ----------
+function renderRankingSection(){
+  const el=document.getElementById('rankingSection');
+  if(isRankingOptedIn()){
+    const name=getNickname();
+    el.innerHTML=`
+      <div class="ranking-status">🏆 <b>${escapeHtml(name)}</b>さんとして参加中</div>
+      <div class="ranking-actions">
+        <button id="changeNicknameBtn" class="ranking-link-btn">ニックネーム変更</button>
+        <button id="leaveRankingBtn" class="ranking-link-btn">参加をやめる</button>
+      </div>`;
+    document.getElementById('changeNicknameBtn').addEventListener('click',()=>showNicknameModal(false));
+    document.getElementById('leaveRankingBtn').addEventListener('click',()=>{
+      if(confirm('ランキング参加をやめますか?')){
+        setRankingOptedIn(false);
+        renderRankingSection();
+      }
+    });
+  }else{
+    el.innerHTML=`<button id="joinRankingBtn" class="ranking-join-btn">🏆 みんなのランキングに参加する</button>`;
+    document.getElementById('joinRankingBtn').addEventListener('click',()=>showNicknameModal(true));
+  }
+}
+
+function showNicknameModal(isJoinFlow){
+  document.getElementById('nicknameInput').value=getNickname();
+  document.getElementById('nicknameOverlay').dataset.joinFlow=isJoinFlow?'1':'0';
+  document.getElementById('nicknameOverlay').classList.add('show');
+}
+function hideNicknameModal(){
+  document.getElementById('nicknameOverlay').classList.remove('show');
+}
+document.getElementById('nicknameConfirmBtn').addEventListener('click',()=>{
+  const val=document.getElementById('nicknameInput').value.trim();
+  if(!val){ alert('ニックネームを入力してね'); return; }
+  setNickname(val.slice(0,10));
+  setRankingOptedIn(true);
+  hideNicknameModal();
+  renderRankingSection();
+});
+document.getElementById('nicknameCancelBtn').addEventListener('click',hideNicknameModal);
+
+// ---------- 今日のランキング表示 ----------
+async function showTodayRanking(){
+  const d=DIFFICULTIES[difficulty];
+  document.getElementById('rankingViewTitle').textContent=`今日の「${d.label}」ランキング`;
+  const listEl=document.getElementById('rankingViewList');
+  listEl.innerHTML='<div style="text-align:center;color:var(--ink-soft);">読み込み中…</div>';
+  document.getElementById('rankingViewOverlay').classList.add('show');
+  const rows=await supabaseFetchTop(dateKey(new Date()),difficulty,5);
+  if(!rows.length){
+    listEl.innerHTML='<div style="text-align:center;color:var(--ink-soft);">まだ今日の記録がないみたい</div>';
+    return;
+  }
+  listEl.innerHTML=rows.map((r,i)=>`
+    <div class="ranking-row">
+      <span class="ranking-rank">${i+1}位</span>
+      <span class="ranking-name">${escapeHtml(r.nickname)}</span>
+      <span class="ranking-score">${r.score}点</span>
+    </div>`).join('');
+}
+document.getElementById('resultRankingBtn').addEventListener('click',showTodayRanking);
+document.getElementById('rankingViewClose').addEventListener('click',()=>{
+  document.getElementById('rankingViewOverlay').classList.remove('show');
+});
 
 // ---------- あそびかた(チュートリアル) ----------
 const TUTORIAL_SEEN_KEY='puzzle-tutorial-seen';
@@ -1075,6 +1231,23 @@ function showDayDetail(key){
   });
   dayDetail.innerHTML=html;
   dayDetail.style.display='block';
+  fetchAndAppendDayRanking(key);
+}
+
+// その日の「みんなのトップ3」を難易度ごとに取得して追記する(通信できなければ何も表示しない)
+async function fetchAndAppendDayRanking(key){
+  const sections=[];
+  for(const diff of Object.keys(DIFFICULTIES)){
+    const rows=await supabaseFetchTop(key,diff,3);
+    if(rows.length){
+      const list=rows.map((r,i)=>`${i+1}位 ${escapeHtml(r.nickname)}(${r.score}点)`).join('・');
+      sections.push(`<div class="day-ranking-line"><b>${DIFFICULTIES[diff].label}トップ3:</b> ${list}</div>`);
+    }
+  }
+  if(sections.length){
+    dayDetail.insertAdjacentHTML('beforeend',
+      `<hr style="margin:10px 0;border:none;border-top:1px solid var(--paper-deep);">`+sections.join(''));
+  }
 }
 
 document.getElementById('openCal').addEventListener('click',()=>{
