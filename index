@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>いろあわせパズル</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAF6EE;
+    --paper-deep:#F1EADC;
+    --ink:#3B322A;
+    --ink-soft:#6B5E50;
+    --shu:#C1440E;
+    --c0:#F2A6B3;
+    --c1:#7FB88F;
+    --c2:#6FA8C8;
+    --c3:#EDB92E;
+    --c4:#A98FC4;
+    --c5:#E88A5A;
+    --c6:#4FA695;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{
+    margin:0;padding:0;height:100%;
+    background:var(--paper);
+    font-family:'Zen Maru Gothic',sans-serif;
+    color:var(--ink);
+    overscroll-behavior:none;
+    user-select:none;
+  }
+  .app{
+    max-width:520px;margin:0 auto;min-height:100dvh;
+    display:flex;flex-direction:column;align-items:center;
+    padding:20px 16px 28px;
+  }
+  header{width:100%;text-align:center;margin-bottom:6px;}
+  h1{font-size:26px;font-weight:900;margin:0 0 4px;letter-spacing:.03em;}
+  .date{font-size:15px;color:var(--ink-soft);font-weight:500;}
+  .diff-label{
+    display:inline-block;margin-top:10px;background:#fff;border-radius:12px;
+    padding:6px 14px;font-size:13px;font-weight:700;color:var(--shu);
+    box-shadow:0 2px 6px rgba(59,50,42,.08);
+  }
+
+  .statbar{
+    width:100%;display:flex;align-items:center;justify-content:space-between;
+    margin:14px 0 14px;gap:10px;
+  }
+  .score-box,.time-box{
+    background:#fff;border-radius:16px;padding:10px 16px;
+    box-shadow:0 2px 0 var(--paper-deep), 0 4px 10px rgba(59,50,42,.08);
+    flex:1;
+  }
+  .score-label{font-size:12px;color:var(--ink-soft);font-weight:500;}
+  .score-value{font-size:24px;font-weight:900;font-variant-numeric:tabular-nums;color:var(--shu);}
+  .time-value{font-size:24px;font-weight:900;font-variant-numeric:tabular-nums;}
+  .cal-btn{
+    background:#fff;border:none;border-radius:16px;
+    width:52px;height:52px;font-size:24px;flex-shrink:0;
+    box-shadow:0 2px 0 var(--paper-deep), 0 4px 10px rgba(59,50,42,.08);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;
+  }
+  .cal-btn:active{transform:translateY(2px);box-shadow:0 0 0 var(--paper-deep);}
+
+  .board{
+    width:100%;
+    display:grid;gap:6px;
+    background:var(--paper-deep);
+    border-radius:20px;padding:8px;
+    box-shadow:inset 0 2px 6px rgba(59,50,42,.12);
+  }
+  .cell{
+    border:none;border-radius:12px;
+    display:flex;align-items:center;justify-content:center;
+    font-weight:700;color:rgba(255,255,255,.92);
+    cursor:pointer;position:relative;
+    transition:transform .15s ease, opacity .18s ease;
+  }
+  .cell.empty{visibility:hidden;pointer-events:none;}
+  .cell:active{transform:scale(.92);}
+  .cell.pop{animation:pop .22s ease forwards;}
+  @keyframes pop{0%{transform:scale(1);opacity:1;}100%{transform:scale(.2);opacity:0;}}
+  .cell.shake{animation:shake .28s ease;}
+  @keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-4px);}75%{transform:translateX(4px);}}
+  .c0{background:linear-gradient(160deg,var(--c0),#e08a9a);}
+  .c1{background:linear-gradient(160deg,var(--c1),#5f9d70);}
+  .c2{background:linear-gradient(160deg,var(--c2),#4f8bab);}
+  .c3{background:linear-gradient(160deg,var(--c3),#d1a11c);}
+  .c4{background:linear-gradient(160deg,var(--c4),#8d70ae);}
+  .c5{background:linear-gradient(160deg,var(--c5),#c96a3a);}
+  .c6{background:linear-gradient(160deg,var(--c6),#357d70);}
+
+  .action-row{
+    margin-top:18px;width:100%;display:grid;grid-template-columns:.85fr .85fr 1.3fr;gap:8px;
+  }
+  .hint-btn,.giveup-btn,.newgame{
+    border:none;border-radius:18px;padding:16px 4px;font-size:15px;font-weight:700;
+    font-family:inherit;cursor:pointer;
+  }
+  .hint-btn,.giveup-btn{
+    background:#fff;color:var(--ink-soft);border:2px solid var(--paper-deep);
+    box-shadow:0 4px 0 var(--paper-deep);
+  }
+  .hint-btn:active,.giveup-btn:active{transform:translateY(4px);box-shadow:0 0 0 var(--paper-deep);}
+  .hint-btn:disabled,.giveup-btn:disabled{opacity:.4;}
+  .newgame{background:var(--shu);color:#fff;box-shadow:0 4px 0 #96350a;}
+  .newgame:active{transform:translateY(4px);box-shadow:0 0 0 #96350a;}
+
+  .cell.hint{outline:4px solid var(--shu);outline-offset:-3px;animation:hintPulse .6s ease-in-out infinite alternate;}
+  @keyframes hintPulse{from{box-shadow:0 0 2px rgba(193,68,14,.5);}to{box-shadow:0 0 16px rgba(193,68,14,.95);}}
+
+  .msg{margin-top:12px;font-size:15px;color:var(--ink-soft);text-align:center;min-height:20px;}
+
+  .demo-controls{
+    margin-top:10px;width:100%;display:flex;gap:8px;justify-content:center;
+  }
+  .demo-controls button{
+    background:#fff;color:var(--ink-soft);border:2px solid var(--paper-deep);
+    border-radius:14px;padding:10px 20px;font-size:15px;font-weight:700;
+    font-family:inherit;cursor:pointer;box-shadow:0 3px 0 var(--paper-deep);
+  }
+  .demo-controls button:active{transform:translateY(3px);box-shadow:0 0 0 var(--paper-deep);}
+  .demo-controls button:disabled{opacity:.4;}
+
+  .overlay{
+    position:fixed;inset:0;background:rgba(59,50,42,.45);
+    display:none;align-items:center;justify-content:center;padding:20px;z-index:10;
+  }
+  .overlay.show{display:flex;}
+
+  .diff-card{
+    background:var(--paper);border-radius:22px;padding:26px 22px;
+    width:100%;max-width:400px;box-shadow:0 10px 30px rgba(0,0,0,.25);text-align:center;
+  }
+  .diff-card h2{margin:0 0 4px;font-size:21px;font-weight:900;}
+  .diff-card p{margin:0 0 18px;font-size:14px;color:var(--ink-soft);}
+  .diff-choice{
+    width:100%;background:#fff;border:2px solid transparent;border-radius:16px;
+    padding:16px;margin-bottom:12px;font-family:inherit;cursor:pointer;
+    display:flex;flex-direction:column;gap:2px;text-align:left;
+    box-shadow:0 2px 0 var(--paper-deep),0 4px 10px rgba(59,50,42,.06);
+  }
+  .diff-choice .name{font-size:18px;font-weight:900;color:var(--ink);}
+  .diff-choice .desc{font-size:13px;color:var(--ink-soft);font-weight:500;}
+  .diff-choice:active{transform:scale(.98);}
+
+  .result-card{
+    background:var(--paper);border-radius:22px;padding:28px 24px;
+    width:100%;max-width:400px;box-shadow:0 10px 30px rgba(0,0,0,.25);text-align:center;
+  }
+  .result-card h2{margin:0 0 4px;font-size:22px;font-weight:900;color:var(--shu);}
+  .result-card .result-diff{font-size:13px;color:var(--ink-soft);font-weight:700;margin-bottom:18px;}
+  .result-stats{display:flex;gap:10px;margin-bottom:22px;}
+  .result-stats .box{flex:1;background:#fff;border-radius:14px;padding:14px 6px;box-shadow:0 2px 8px rgba(59,50,42,.08);}
+  .result-stats .box .label{font-size:12px;color:var(--ink-soft);font-weight:500;margin-bottom:2px;}
+  .result-stats .box .value{font-size:22px;font-weight:900;font-variant-numeric:tabular-nums;}
+  .result-demo{
+    width:100%;background:#fff;color:var(--ink-soft);border:2px solid var(--paper-deep);border-radius:16px;
+    padding:14px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;
+    box-shadow:0 4px 0 var(--paper-deep);margin-bottom:12px;
+  }
+  .result-demo:active{transform:translateY(4px);box-shadow:0 0 0 var(--paper-deep);}
+  .result-demo:disabled{opacity:.4;}
+  .result-newgame{
+    width:100%;background:var(--shu);color:#fff;border:none;border-radius:16px;
+    padding:16px;font-size:17px;font-weight:700;font-family:inherit;cursor:pointer;
+    box-shadow:0 4px 0 #96350a;
+  }
+  .result-newgame:active{transform:translateY(4px);box-shadow:0 0 0 #96350a;}
+  .result-close{
+    width:100%;background:none;border:none;color:var(--ink-soft);
+    font-family:inherit;font-size:14px;font-weight:500;padding:12px;cursor:pointer;
+  }
+
+  .cal-card{
+    background:var(--paper);border-radius:22px;padding:20px;
+    width:100%;max-width:440px;max-height:85dvh;overflow-y:auto;
+    box-shadow:0 10px 30px rgba(0,0,0,.25);
+  }
+  .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .cal-head button{
+    background:#fff;border:none;border-radius:12px;width:42px;height:42px;font-size:20px;
+    box-shadow:0 2px 6px rgba(59,50,42,.12);cursor:pointer;
+  }
+  .cal-title{font-size:19px;font-weight:700;}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:6px;}
+  .cal-dow{text-align:center;font-size:12px;color:var(--ink-soft);font-weight:500;padding:4px 0;}
+  .cal-day{
+    min-height:52px;border-radius:10px;background:#fff;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    font-size:13px;font-weight:700;position:relative;padding:3px 0;
+    box-shadow:0 1px 3px rgba(59,50,42,.08);
+  }
+  .cal-day.blank{background:transparent;box-shadow:none;}
+  .cal-day.today{outline:2px solid var(--shu);outline-offset:-2px;}
+  .cal-day .dots{display:flex;gap:2px;margin-top:2px;}
+  .cal-day .dot{width:7px;height:7px;border-radius:50%;}
+  .cal-close{
+    width:100%;margin-top:14px;background:var(--ink);color:#fff;border:none;
+    border-radius:14px;padding:13px;font-size:16px;font-weight:700;font-family:inherit;cursor:pointer;
+  }
+  .empty-note{text-align:center;color:var(--ink-soft);font-size:14px;margin-top:10px;}
+  .day-detail{margin-top:10px;background:#fff;border-radius:14px;padding:12px 14px;font-size:14px;line-height:1.9;}
+  .day-detail b{color:var(--shu);}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>いろあわせパズル</h1>
+    <div class="date" id="todayLabel"></div>
+    <div class="diff-label" id="diffLabel"></div>
+  </header>
+
+  <div class="statbar">
+    <div class="score-box">
+      <div class="score-label">スコア</div>
+      <div class="score-value" id="scoreValue">0</div>
+    </div>
+    <div class="time-box">
+      <div class="score-label">経過時間</div>
+      <div class="time-value" id="timeValue">00:00</div>
+    </div>
+    <button class="cal-btn" id="openCal" aria-label="記録を見る">📅</button>
+  </div>
+
+  <div class="board" id="board"></div>
+
+  <div class="msg" id="msg">難易度を選んでゲームを始めてね</div>
+
+  <div class="demo-controls" id="demoControls" style="display:none;">
+    <button id="demoStopBtn">⏸ ストップ</button>
+    <button id="demoPlayBtn" disabled>▶ さいせい</button>
+    <button id="demoReplayBtn" style="display:none;">🔁 もう一度見る</button>
+  </div>
+
+  <div class="action-row">
+    <button class="hint-btn" id="hintBtn" disabled>ヒント</button>
+    <button class="giveup-btn" id="giveupBtn" disabled>ギブアップ</button>
+    <button class="newgame" id="newGameBtn">新しいゲームを始める</button>
+  </div>
+</div>
+
+<div class="overlay" id="diffOverlay">
+  <div class="diff-card">
+    <h2>難易度をえらんでね</h2>
+    <p>あとから「新しいゲームを始める」でも選び直せます</p>
+    <button class="diff-choice" data-d="easy"><span class="name">かんたん</span><span class="desc">5色・6×6マス</span></button>
+    <button class="diff-choice" data-d="normal"><span class="name">ふつう</span><span class="desc">7色・6×6マス</span></button>
+    <button class="diff-choice" data-d="hard"><span class="name">むずかしい</span><span class="desc">7色・8×9マス</span></button>
+  </div>
+</div>
+
+<div class="overlay" id="resultOverlay">
+  <div class="result-card">
+    <h2 id="resultTitle">おつかれさま!</h2>
+    <div class="result-diff" id="resultDiff"></div>
+    <div class="result-stats">
+      <div class="box">
+        <div class="label">スコア</div>
+        <div class="value" id="resultScore">0</div>
+      </div>
+      <div class="box">
+        <div class="label">時間</div>
+        <div class="value" id="resultTime">00:00</div>
+      </div>
+    </div>
+    <button class="result-demo" id="resultDemoBtn" style="display:none;">お手本を自動再生する</button>
+    <button class="result-newgame" id="resultNewGameBtn">新しいゲームを始める</button>
+    <button class="result-close" id="resultCloseBtn">盤面を見る</button>
+  </div>
+</div>
+
+<div class="overlay" id="calOverlay">
+  <div class="cal-card">
+    <div class="cal-head">
+      <button id="prevMonth">◀</button>
+      <div class="cal-title" id="calTitle"></div>
+      <button id="nextMonth">▶</button>
+    </div>
+    <div class="cal-grid" id="calDow"></div>
+    <div class="cal-grid" id="calDays"></div>
+    <div class="empty-note" id="calEmptyNote" style="display:none;">まだ記録がありません</div>
+    <div class="day-detail" id="dayDetail" style="display:none;"></div>
+    <button class="cal-close" id="closeCal">とじる</button>
+  </div>
+</div>
+
+<script>
+const DIFFICULTIES={
+  easy:  {label:'かんたん', colors:5, rows:6, cols:6, color:'var(--c1)', scoreMult:0.7},
+  normal:{label:'ふつう',   colors:7, rows:6, cols:6, color:'var(--c2)', scoreMult:1},
+  hard:  {label:'むずかしい',colors:7, rows:9, cols:8, color:'var(--c5)', scoreMult:1.4}
+};
+const STORAGE_KEY='puzzle-daily-records';
+const SYMBOLS=['●','■','▲','◆','★','✚','✖'];
+
+let difficulty=null;
+let ROWS=6, COLS=6, COLORS=5;
+let grid=[];
+let initialGrid=[]; // そのラウンド開始時点の盤面(おつかれさま後のお手本再生で使用)
+let score=0;
+let startTime=0;
+let timerHandle=null;
+let busy=false;
+let roundOver=true;      // ゲーム開始前はtrue(操作不可)
+let hintPenaltyPending=false; // ヒントを使った直後は、次に消した時のスコアが半分になる
+let records={};
+let calMonthOffset=0;
+
+const boardEl=document.getElementById('board');
+const scoreEl=document.getElementById('scoreValue');
+const timeEl=document.getElementById('timeValue');
+const msgEl=document.getElementById('msg');
+const diffLabelEl=document.getElementById('diffLabel');
+const giveupBtn=document.getElementById('giveupBtn');
+const hintBtn=document.getElementById('hintBtn');
+
+function pad(n){return n.toString().padStart(2,'0');}
+function dateKey(d){return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;}
+function fmtTime(sec){return `${pad(Math.floor(sec/60))}:${pad(sec%60)}`;}
+
+function todayLabel(){
+  const d=new Date();
+  const w=['日','月','火','水','木','金','土'][d.getDay()];
+  document.getElementById('todayLabel').textContent=`${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日(${w})`;
+}
+
+// ---------- storage (スマホ内のブラウザに保存。ログイン不要) ----------
+async function loadRecords(){
+  try{
+    const raw=localStorage.getItem(STORAGE_KEY);
+    records=raw ? JSON.parse(raw) : {};
+  }catch(e){
+    console.error('読み込みに失敗しました',e);
+    records={};
+  }
+}
+async function saveRecords(){
+  try{
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(records));
+  }catch(e){
+    console.error('保存に失敗しました',e);
+  }
+}
+async function recordRound(finalScore,elapsedSec){
+  const key=dateKey(new Date());
+  if(!records[key]) records[key]={};
+  const cur=records[key][difficulty]||{bestScore:0,bestTime:0,plays:0};
+  cur.plays+=1;
+  if(finalScore>=cur.bestScore){
+    cur.bestScore=finalScore;
+    cur.bestTime=elapsedSec;
+  }
+  records[key][difficulty]=cur;
+  await saveRecords();
+}
+
+// ---------- timer ----------
+function startTimer(){
+  clearInterval(timerHandle);
+  startTime=Date.now();
+  timeEl.textContent='00:00';
+  timerHandle=setInterval(()=>{
+    const sec=Math.floor((Date.now()-startTime)/1000);
+    timeEl.textContent=fmtTime(sec);
+  },1000);
+}
+function stopTimer(){
+  clearInterval(timerHandle);
+  return Math.floor((Date.now()-startTime)/1000);
+}
+
+// ---------- grid logic ----------
+function randColor(){return Math.floor(Math.random()*COLORS);}
+function shuffle(arr){
+  for(let i=arr.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
+  return arr;
+}
+function cloneGrid(g){ return g.map(row=>row.slice()); }
+function cellKey(r,c){ return r+'_'+c; }
+
+// 盤面を「3〜5マスの繋がった塊」で隙間なく敷き詰める(全消し可能な盤面のもと)
+function tileBoard(){
+  const grid=[];
+  for(let r=0;r<ROWS;r++) grid.push(new Array(COLS).fill(null));
+  const claimed=new Set();
+  const order=[];
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) order.push([r,c]);
+  shuffle(order);
+
+  const nbrs=(r,c)=>[[r-1,c],[r+1,c],[r,c-1],[r,c+1]].filter(([nr,nc])=>nr>=0&&nr<ROWS&&nc>=0&&nc<COLS);
+
+  for(const [r,c] of order){
+    if(claimed.has(cellKey(r,c))) continue;
+    const color=randColor();
+    const targetSize=3+Math.floor(Math.random()*2); // 3〜4マス(小さめの塊にして難易度アップ)
+    const region=[[r,c]];
+    claimed.add(cellKey(r,c));
+    grid[r][c]=color;
+    let frontier=nbrs(r,c).filter(([nr,nc])=>!claimed.has(cellKey(nr,nc)));
+    while(region.length<targetSize && frontier.length>0){
+      const idx=Math.floor(Math.random()*frontier.length);
+      const [nr,nc]=frontier.splice(idx,1)[0];
+      if(claimed.has(cellKey(nr,nc))) continue;
+      claimed.add(cellKey(nr,nc));
+      grid[nr][nc]=color;
+      region.push([nr,nc]);
+      nbrs(nr,nc).forEach(n=>{ if(!claimed.has(cellKey(n[0],n[1]))) frontier.push(n); });
+    }
+    if(region.length<3){
+      // 3マス未満で終わった小さすぎる塊は、隣り合う既存の色に塗り替えて吸収する
+      let absorbColor=null;
+      for(const [rr,cc] of region){
+        for(const [nr,nc] of nbrs(rr,cc)){
+          if(claimed.has(cellKey(nr,nc)) && !region.some(([xr,xc])=>xr===nr&&xc===nc)){
+            absorbColor=grid[nr][nc]; break;
+          }
+        }
+        if(absorbColor!==null) break;
+      }
+      if(absorbColor!==null){
+        region.forEach(([rr,cc])=>{ grid[rr][cc]=absorbColor; });
+      }
+    }
+  }
+  return grid;
+}
+
+// 盤面上の「今タップで消せるグループ」をすべて集める
+function allGroups(g){
+  const seen=new Set();
+  const groups=[];
+  for(let r=0;r<ROWS;r++){
+    for(let c=0;c<COLS;c++){
+      const key=cellKey(r,c);
+      if(seen.has(key)) continue;
+      if(g[r][c]===null||g[r][c]===undefined){ seen.add(key); continue; }
+      const group=findGroup(g,r,c);
+      group.forEach(([gr,gc])=>seen.add(cellKey(gr,gc)));
+      if(group.length>=3) groups.push(group);
+    }
+  }
+  return groups;
+}
+
+// ランダムな順番で何度も自動プレイしてみて、全部消し切れる手順が見つかるか探す
+function trySolveFull(startGrid,attempts){
+  for(let a=0;a<attempts;a++){
+    let g=cloneGrid(startGrid);
+    const sequence=[];
+    while(true){
+      const groups=allGroups(g);
+      if(groups.length===0) break;
+      const pick=groups[Math.floor(Math.random()*groups.length)];
+      sequence.push(pick);
+      pick.forEach(([r,c])=>{ g[r][c]=null; });
+      g=applyGravityAndCompact(g);
+    }
+    const isEmpty=g.every(row=>row.every(cell=>cell===null));
+    if(isEmpty) return sequence;
+  }
+  return null;
+}
+
+function makeGrid(){
+  const GEN_RETRIES=20, SOLVE_ATTEMPTS=150;
+  for(let i=0;i<GEN_RETRIES;i++){
+    const g=tileBoard();
+    if(trySolveFull(g,SOLVE_ATTEMPTS)) return g;
+  }
+  return tileBoard(); // 万一見つからない場合の保険(ごくまれ)
+}
+function neighbors(r,c){return [[r-1,c],[r+1,c],[r,c-1],[r,c+1]];}
+function findGroup(g,r,c){
+  const color=g[r][c];
+  if(color===null||color===undefined) return [];
+  const seen=new Set();
+  const stack=[[r,c]];
+  const group=[];
+  while(stack.length){
+    const [cr,cc]=stack.pop();
+    const k=cr+'_'+cc;
+    if(seen.has(k)) continue;
+    seen.add(k);
+    if(cr<0||cr>=ROWS||cc<0||cc>=COLS) continue;
+    if(g[cr][cc]!==color) continue;
+    group.push([cr,cc]);
+    for(const [nr,nc] of neighbors(cr,cc)) stack.push([nr,nc]);
+  }
+  return group;
+}
+function hasMove(g){
+  return allGroups(g).length>0;
+}
+// 盤面全体を走査して、いちばん大きく繋がっているグループを探す(ヒントで使用)
+function bestGroup(g){
+  const groups=allGroups(g);
+  if(groups.length===0) return null;
+  return groups.reduce((a,b)=>b.length>a.length?b:a);
+}
+function applyGravityAndCompact(g){
+  // 縦方向にだけ落とす(空いた列を左に詰めるのはしない)
+  for(let c=0;c<COLS;c++){
+    const remaining=[];
+    for(let r=0;r<ROWS;r++) if(g[r][c]!==null) remaining.push(g[r][c]);
+    const newCol=new Array(ROWS-remaining.length).fill(null).concat(remaining);
+    for(let r=0;r<ROWS;r++) g[r][c]=newCol[r];
+  }
+  return g;
+}
+
+function render(){
+  boardEl.style.aspectRatio=`${COLS}/${ROWS}`;
+  boardEl.style.gridTemplateColumns=`repeat(${COLS},1fr)`;
+  boardEl.style.gridTemplateRows=`repeat(${ROWS},1fr)`;
+  boardEl.innerHTML='';
+  const fontSize = COLS>=8 ? 'clamp(14px,3.6vw,20px)' : 'clamp(18px,5vw,26px)';
+  for(let r=0;r<ROWS;r++){
+    for(let c=0;c<COLS;c++){
+      const val=grid[r][c];
+      const btn=document.createElement('button');
+      btn.className='cell'+(val===null?' empty':' c'+val);
+      btn.style.fontSize=fontSize;
+      if(val!==null) btn.textContent=SYMBOLS[val];
+      btn.dataset.r=r; btn.dataset.c=c;
+      btn.addEventListener('click',onCellTap);
+      boardEl.appendChild(btn);
+    }
+  }
+  scoreEl.textContent=score;
+}
+
+async function onCellTap(e){
+  if(busy||roundOver) return;
+  const r=parseInt(e.currentTarget.dataset.r,10);
+  const c=parseInt(e.currentTarget.dataset.c,10);
+  if(!grid[r] || grid[r][c]===null || grid[r][c]===undefined) return;
+
+  const group=findGroup(grid,r,c);
+  if(group.length<3){
+    e.currentTarget.classList.add('shake');
+    setTimeout(()=>{ e.currentTarget && e.currentTarget.classList.remove('shake'); },300);
+    return;
+  }
+
+  busy=true;
+  try{
+    let gained=Math.round(group.length*(group.length-1)*5*DIFFICULTIES[difficulty].scoreMult);
+    let penalized=false;
+    if(hintPenaltyPending){
+      gained=Math.floor(gained/2);
+      hintPenaltyPending=false;
+      penalized=true;
+    }
+    score += gained;
+    scoreEl.textContent=score;
+
+    for(const [gr,gc] of group){
+      const idx=gr*COLS+gc;
+      const el=boardEl.children[idx];
+      if(el) el.classList.add('pop');
+    }
+    await new Promise(res=>setTimeout(res,180));
+
+    for(const [gr,gc] of group) grid[gr][gc]=null;
+    grid=applyGravityAndCompact(grid);
+    render();
+
+    if(!hasMove(grid)){
+      await finishRound('おつかれさま!');
+    }else if(penalized){
+      msgEl.textContent='ヒントを使った次だったから、スコアが半分になったよ';
+      setTimeout(()=>{ if(!roundOver) msgEl.textContent='同じ色を3つ以上つなげてタップしてね'; },2200);
+    }
+  }catch(err){
+    console.error('パズル処理でエラーが発生しました',err);
+    msgEl.textContent='うまく処理できませんでした。「新しいゲームを始める」を押してね';
+  }finally{
+    busy=false;
+  }
+}
+
+async function finishRound(prefix){
+  roundOver=true;
+  giveupBtn.disabled=true;
+  hintBtn.disabled=true;
+  const elapsed=stopTimer();
+  msgEl.textContent=`${prefix} スコア ${score}・時間 ${fmtTime(elapsed)} でした`;
+  await recordRound(score,elapsed);
+  showResultPopup(prefix,score,elapsed);
+}
+
+function showResultPopup(prefix,finalScore,elapsedSec){
+  document.getElementById('resultTitle').textContent=prefix;
+  document.getElementById('resultDiff').textContent=DIFFICULTIES[difficulty].label+`(${DIFFICULTIES[difficulty].colors}色・${DIFFICULTIES[difficulty].rows}×${DIFFICULTIES[difficulty].cols})`;
+  document.getElementById('resultScore').textContent=finalScore;
+  document.getElementById('resultTime').textContent=fmtTime(elapsedSec);
+  const demoBtn=document.getElementById('resultDemoBtn');
+  demoBtn.style.display='block';
+  demoBtn.disabled=false;
+  demoBtn.textContent='お手本を見る';
+  document.getElementById('resultOverlay').classList.add('show');
+}
+function hideResultPopup(){
+  document.getElementById('resultOverlay').classList.remove('show');
+}
+
+async function giveUp(){
+  if(roundOver||busy) return;
+  await finishRound('ギブアップ!');
+}
+
+// ---------- ヒント(使うと次に消した時のスコアが半分になる) ----------
+async function showHint(){
+  if(roundOver||busy) return;
+  const group=bestGroup(grid);
+  if(!group){
+    msgEl.textContent='もう消せる場所がないみたい。ギブアップしてもいいよ';
+    return;
+  }
+  hintPenaltyPending=true;
+  msgEl.textContent='光っているところをタップしてみてね(次に消すスコアは半分になるよ)';
+  group.forEach(([r,c])=>{
+    const el=boardEl.children[r*COLS+c];
+    if(el) el.classList.add('hint');
+  });
+  setTimeout(()=>{
+    group.forEach(([r,c])=>{
+      const el=boardEl.children[r*COLS+c];
+      if(el) el.classList.remove('hint');
+    });
+  },1800);
+}
+
+// ---------- お手本の自動再生 ----------
+function sleep(ms){return new Promise(res=>setTimeout(res,ms));}
+let demoPaused=false;
+// 一時停止中は進めず、再開されたら続きから進む「止められるsleep」
+async function sleepPausable(ms){
+  let elapsed=0;
+  const step=80;
+  while(elapsed<ms){
+    await sleep(step);
+    if(!demoPaused) elapsed+=step;
+  }
+}
+
+const demoControls=document.getElementById('demoControls');
+const demoStopBtn=document.getElementById('demoStopBtn');
+const demoPlayBtn=document.getElementById('demoPlayBtn');
+const demoReplayBtn=document.getElementById('demoReplayBtn');
+demoStopBtn.addEventListener('click',()=>{
+  demoPaused=true;
+  demoStopBtn.disabled=true;
+  demoPlayBtn.disabled=false;
+});
+demoPlayBtn.addEventListener('click',()=>{
+  demoPaused=false;
+  demoStopBtn.disabled=false;
+  demoPlayBtn.disabled=true;
+});
+demoReplayBtn.addEventListener('click',replayDemo);
+
+let demoStartGrid=null;   // 再生を開始した時点の盤面(もう一度見る、で使う)
+let demoSequence=null;    // 見つかった消す順番
+let demoFullyClearable=false;
+let demoRestarted=false;
+
+async function autoSolveDemo(){
+  const demoBtn=document.getElementById('resultDemoBtn');
+  demoBtn.disabled=true;
+  hideResultPopup();
+  demoPaused=false;
+  msgEl.textContent='お手本を考え中…';
+  await sleep(30); // メッセージを画面に反映させてから重い処理へ
+
+  demoRestarted=false;
+  if(!hasMove(grid)){
+    // 「おつかれさま」で終わった場合など、今の盤面はもう詰んでいるので、
+    // ラウンド開始時の盤面まで巻き戻してから解き方を見せる
+    grid=cloneGrid(initialGrid);
+    render();
+    demoRestarted=true;
+    msgEl.textContent='最初の盤面から、お手本を考え中…';
+    await sleepPausable(500);
+  }
+
+  demoStartGrid=cloneGrid(grid); // ここから、もう一度再生できるように保存しておく
+
+  let sequence=trySolveFull(grid,150);
+  demoFullyClearable=!!sequence;
+  if(!sequence){
+    // 途中の手の順番によっては全消しできない場合もあるので、その時は「消せるだけ」見せる
+    sequence=[];
+    let g=cloneGrid(grid);
+    while(true){
+      const group=bestGroup(g);
+      if(!group) break;
+      sequence.push(group);
+      group.forEach(([r,c])=>{ g[r][c]=null; });
+      g=applyGravityAndCompact(g);
+    }
+  }
+  demoSequence=sequence;
+
+  await playDemoSequence();
+}
+
+async function playDemoSequence(){
+  demoPaused=false;
+  demoStopBtn.style.display='inline-block';
+  demoPlayBtn.style.display='inline-block';
+  demoReplayBtn.style.display='none';
+  demoStopBtn.disabled=false;
+  demoPlayBtn.disabled=true;
+  demoControls.style.display='flex';
+
+  msgEl.textContent = demoFullyClearable
+    ? (demoRestarted ? '最初の盤面から、お手本を再生しています…(記録済みのスコアは変わりません)' : 'お手本を再生しています…(記録済みのスコアは変わりません)')
+    : 'お手本を再生しています(ここからは全部は消せなかったみたい)';
+
+  for(const group of demoSequence){
+    // 1. まず消える範囲を光らせて囲う
+    group.forEach(([r,c])=>{
+      const el=boardEl.children[r*COLS+c];
+      if(el) el.classList.add('hint');
+    });
+    await sleepPausable(900);
+
+    // 2. 光った範囲を消すアニメーション
+    group.forEach(([r,c])=>{
+      const el=boardEl.children[r*COLS+c];
+      if(el){ el.classList.remove('hint'); el.classList.add('pop'); }
+    });
+    await sleepPausable(600);
+
+    // 3. 実際に消して、落として、次へ
+    group.forEach(([r,c])=>{ grid[r][c]=null; });
+    grid=applyGravityAndCompact(grid);
+    render();
+    scoreEl.textContent=score; // 記録済みスコアは変更しない
+    await sleepPausable(450);
+  }
+
+  msgEl.textContent = demoFullyClearable
+    ? 'お手本の通りで、全部消しきれました!記録済みのスコアはさっきのままだよ'
+    : 'お手本はここまで。記録済みのスコアはさっきのままだよ';
+
+  // ストップ/さいせいを隠して、もう一度見るボタンを出す
+  demoStopBtn.style.display='none';
+  demoPlayBtn.style.display='none';
+  demoReplayBtn.style.display='inline-block';
+}
+
+async function replayDemo(){
+  grid=cloneGrid(demoStartGrid);
+  render();
+  await playDemoSequence();
+}
+
+
+
+function startGame(diff){
+  difficulty=diff;
+  const d=DIFFICULTIES[diff];
+  ROWS=d.rows; COLS=d.cols; COLORS=d.colors;
+  diffLabelEl.textContent=`${d.label}(${d.colors}色・${d.rows}×${d.cols})`;
+  grid=makeGrid();
+  initialGrid=cloneGrid(grid);
+  score=0;
+  roundOver=false;
+  busy=false;
+  hintPenaltyPending=false;
+  giveupBtn.disabled=false;
+  hintBtn.disabled=false;
+  msgEl.textContent='同じ色を3つ以上つなげてタップしてね';
+  render();
+  startTimer();
+  hideDiffPopup();
+}
+
+function showDiffPopup(){document.getElementById('diffOverlay').classList.add('show');}
+function hideDiffPopup(){document.getElementById('diffOverlay').classList.remove('show');}
+
+document.getElementById('diffOverlay').addEventListener('click',(e)=>{
+  const btn=e.target.closest('.diff-choice');
+  if(!btn) return;
+  startGame(btn.dataset.d);
+});
+document.getElementById('newGameBtn').addEventListener('click',showDiffPopup);
+giveupBtn.addEventListener('click',giveUp);
+hintBtn.addEventListener('click',showHint);
+document.getElementById('resultDemoBtn').addEventListener('click',autoSolveDemo);
+document.getElementById('resultNewGameBtn').addEventListener('click',()=>{
+  hideResultPopup();
+  showDiffPopup();
+});
+document.getElementById('resultCloseBtn').addEventListener('click',hideResultPopup);
+
+// ---------- calendar ----------
+const calOverlay=document.getElementById('calOverlay');
+const calTitle=document.getElementById('calTitle');
+const calDays=document.getElementById('calDays');
+const calDow=document.getElementById('calDow');
+const calEmptyNote=document.getElementById('calEmptyNote');
+const dayDetail=document.getElementById('dayDetail');
+
+function renderCalendar(){
+  const now=new Date();
+  const base=new Date(now.getFullYear(),now.getMonth()+calMonthOffset,1);
+  const y=base.getFullYear(), m=base.getMonth();
+  calTitle.textContent=`${y}年${m+1}月`;
+  dayDetail.style.display='none';
+
+  calDow.innerHTML='';
+  ['日','月','火','水','木','金','土'].forEach(dw=>{
+    const el=document.createElement('div');
+    el.className='cal-dow'; el.textContent=dw;
+    calDow.appendChild(el);
+  });
+
+  calDays.innerHTML='';
+  const firstDow=new Date(y,m,1).getDay();
+  const daysInMonth=new Date(y,m+1,0).getDate();
+  const todayKey=dateKey(new Date());
+
+  let anyRecord=false;
+  for(const k in records) if(k.startsWith(`${y}-${pad(m+1)}`)) anyRecord=true;
+  calEmptyNote.style.display = anyRecord? 'none':'block';
+
+  for(let i=0;i<firstDow;i++){
+    const blank=document.createElement('div');
+    blank.className='cal-day blank';
+    calDays.appendChild(blank);
+  }
+  for(let day=1;day<=daysInMonth;day++){
+    const key=`${y}-${pad(m+1)}-${pad(day)}`;
+    const el=document.createElement('div');
+    el.className='cal-day'+(key===todayKey?' today':'');
+    const num=document.createElement('div');
+    num.textContent=day;
+    el.appendChild(num);
+    const rec=records[key];
+    if(rec){
+      const dots=document.createElement('div');
+      dots.className='dots';
+      Object.keys(rec).forEach(diff=>{
+        const dot=document.createElement('div');
+        dot.className='dot';
+        dot.style.background=DIFFICULTIES[diff]?DIFFICULTIES[diff].color:'#ccc';
+        dots.appendChild(dot);
+      });
+      el.appendChild(dots);
+      el.style.cursor='pointer';
+      el.addEventListener('click',()=>showDayDetail(key));
+    }
+    calDays.appendChild(el);
+  }
+}
+
+function showDayDetail(key){
+  const rec=records[key];
+  if(!rec) return;
+  let html=`<b>${key}</b><br>`;
+  Object.keys(DIFFICULTIES).forEach(diff=>{
+    if(rec[diff]){
+      const r=rec[diff];
+      html+=`${DIFFICULTIES[diff].label}: ベストスコア ${r.bestScore}(${fmtTime(r.bestTime)})・プレイ ${r.plays}回<br>`;
+    }
+  });
+  dayDetail.innerHTML=html;
+  dayDetail.style.display='block';
+}
+
+document.getElementById('openCal').addEventListener('click',()=>{
+  calMonthOffset=0;
+  renderCalendar();
+  calOverlay.classList.add('show');
+});
+document.getElementById('closeCal').addEventListener('click',()=>calOverlay.classList.remove('show'));
+document.getElementById('prevMonth').addEventListener('click',()=>{calMonthOffset--;renderCalendar();});
+document.getElementById('nextMonth').addEventListener('click',()=>{calMonthOffset++;renderCalendar();});
+
+// ---------- init ----------
+(async function init(){
+  todayLabel();
+  await loadRecords();
+  showDiffPopup();
+})();
+</script>
+</body>
+</html>
