@@ -195,8 +195,19 @@
   .result-card{
     background:var(--paper);border-radius:22px;padding:28px 24px;
     width:100%;max-width:400px;box-shadow:0 10px 30px rgba(0,0,0,.25);text-align:center;
+    border:3px solid transparent;
   }
   .result-card h2{margin:0 0 4px;font-size:26px;font-weight:900;color:var(--shu);}
+  .result-card.perfect{
+    border-color:var(--c3);
+    background:linear-gradient(180deg,#FFF7E0,var(--paper) 60%);
+  }
+  .result-card.perfect h2{
+    color:#C98A00;font-size:30px;
+    text-shadow:0 1px 0 #fff;
+  }
+  .result-card.perfect h2::before{content:'🎉 ';}
+  .result-card.perfect h2::after{content:' 🎉';}
   .result-card .result-diff{font-size:15px;color:var(--ink-soft);font-weight:700;margin-bottom:18px;}
   .result-stats{display:flex;gap:10px;margin-bottom:8px;}
   .result-stats .box{flex:1;background:#fff;border-radius:14px;padding:14px 6px;box-shadow:0 2px 8px rgba(59,50,42,.08);}
@@ -309,7 +320,7 @@
     <button class="diff-choice" data-d="normal"><span class="name">ふつう</span><span class="desc">7色・6×6マス・最初は一番下の行から</span></button>
     <button class="diff-choice" data-d="hard"><span class="name">むずかしい</span><span class="desc">7色・8×9マス・最初は一番下の行から</span></button>
     <div class="ranking-section" id="rankingSection"></div>
-    <div class="version-tag">v1.0.1</div>
+    <div class="version-tag">v1.0.2</div>
   </div>
 </div>
 
@@ -385,9 +396,9 @@
 
 <script>
 const DIFFICULTIES={
-  easy:  {label:'かんたん', colors:5, rows:6, cols:6, color:'var(--c1)', scoreMult:0.7, delayedMerges:0, firstTapBottomRow:false, targetTime:60,  timeBonusPerSec:2, maxStartGroupSize:null},
-  normal:{label:'ふつう',   colors:7, rows:6, cols:6, color:'var(--c2)', scoreMult:1,   delayedMerges:1, firstTapBottomRow:true,  targetTime:90,  timeBonusPerSec:4, maxStartGroupSize:9},
-  hard:  {label:'むずかしい',colors:7, rows:9, cols:8, color:'var(--c5)', scoreMult:1.4, delayedMerges:3, firstTapBottomRow:true,  targetTime:150, timeBonusPerSec:8, maxStartGroupSize:9}
+  easy:  {label:'かんたん', colors:5, rows:6, cols:6, color:'var(--c1)', scoreMult:0.7, delayedMerges:0, firstTapBottomRow:false, targetTime:60,  timeBonusPerSec:2, maxStartGroupSize:null, perfectBonus:200},
+  normal:{label:'ふつう',   colors:7, rows:6, cols:6, color:'var(--c2)', scoreMult:1,   delayedMerges:1, firstTapBottomRow:true,  targetTime:90,  timeBonusPerSec:4, maxStartGroupSize:9,   perfectBonus:400},
+  hard:  {label:'むずかしい',colors:7, rows:9, cols:8, color:'var(--c5)', scoreMult:1.4, delayedMerges:3, firstTapBottomRow:true,  targetTime:150, timeBonusPerSec:8, maxStartGroupSize:9,   perfectBonus:800}
 };
 const STORAGE_KEY='puzzle-daily-records';
 const SYMBOLS=['●','■','▲','◆','★','✚','✖'];
@@ -822,7 +833,8 @@ async function onCellTap(e){
     render();
 
     if(!hasMove(grid)){
-      await finishRound('おつかれさま!',true);
+      const isPerfect = grid.every(row=>row.every(cell=>cell===null));
+      await finishRound(isPerfect ? 'パーフェクト!!' : 'おつかれさま!', true, isPerfect);
     }else if(penalized){
       msgEl.textContent='ヒントを使った次だったから、スコアが半分になったよ';
       setTimeout(()=>{ if(!roundOver) msgEl.textContent='同じ色を3つ以上つなげてタップしてね'; },2200);
@@ -835,7 +847,7 @@ async function onCellTap(e){
   }
 }
 
-async function finishRound(prefix,allowTimeBonus){
+async function finishRound(prefix,allowTimeBonus,isPerfect){
   roundOver=true;
   giveupBtn.disabled=true;
   hintBtn.disabled=true;
@@ -843,26 +855,35 @@ async function finishRound(prefix,allowTimeBonus){
   const d=DIFFICULTIES[difficulty];
   // 何か1つでも消せていて、かつギブアップでない場合だけ「はやさボーナス」が付く
   const timeBonus = (allowTimeBonus && score>0) ? Math.max(0, d.targetTime-elapsed)*d.timeBonusPerSec : 0;
-  const finalScore = score+timeBonus;
-  msgEl.textContent = timeBonus>0
-    ? `${prefix} スコア ${finalScore}(きほん${score}+はやさボーナス${timeBonus})・時間 ${fmtTime(elapsed)} でした`
+  const finalScoreBeforePerfect = score+timeBonus;
+  const perfectBonus = isPerfect ? d.perfectBonus : 0;
+  const finalScore = finalScoreBeforePerfect+perfectBonus;
+
+  const parts=[`きほん${score}`];
+  if(timeBonus>0) parts.push(`はやさボーナス${timeBonus}`);
+  if(perfectBonus>0) parts.push(`パーフェクトボーナス${perfectBonus}`);
+  msgEl.textContent = parts.length>1
+    ? `${prefix} スコア ${finalScore}(${parts.join('+')})・時間 ${fmtTime(elapsed)} でした`
     : `${prefix} スコア ${finalScore}・時間 ${fmtTime(elapsed)} でした`;
   await recordRound(finalScore,elapsed);
   // ランキング参加中なら、何か1つでも消せていればスコアを送信する(通信失敗しても無視)
   if(isRankingOptedIn() && finalScore>0){
     supabaseInsertScore(getNickname(),difficulty,finalScore,elapsed);
   }
-  showResultPopup(prefix,finalScore,elapsed,score,timeBonus);
+  showResultPopup(prefix,finalScore,elapsed,score,timeBonus,!!isPerfect,perfectBonus);
 }
 
-function showResultPopup(prefix,finalScore,elapsedSec,baseScore,timeBonus){
+function showResultPopup(prefix,finalScore,elapsedSec,baseScore,timeBonus,isPerfect,perfectBonus){
   document.getElementById('resultTitle').textContent=prefix;
   document.getElementById('resultDiff').textContent=DIFFICULTIES[difficulty].label+`(${DIFFICULTIES[difficulty].colors}色・${DIFFICULTIES[difficulty].rows}×${DIFFICULTIES[difficulty].cols})`;
   document.getElementById('resultScore').textContent=finalScore;
   document.getElementById('resultTime').textContent=fmtTime(elapsedSec);
   const breakdownEl=document.getElementById('resultBreakdown');
-  if(timeBonus>0){
-    breakdownEl.textContent=`(きほん${baseScore} + はやさボーナス${timeBonus})`;
+  const parts=[];
+  if(timeBonus>0) parts.push(`はやさボーナス${timeBonus}`);
+  if(perfectBonus>0) parts.push(`パーフェクトボーナス${perfectBonus}`);
+  if(parts.length){
+    breakdownEl.textContent=`(きほん${baseScore} + ${parts.join(' + ')})`;
     breakdownEl.style.display='block';
   }else{
     breakdownEl.style.display='none';
@@ -871,6 +892,7 @@ function showResultPopup(prefix,finalScore,elapsedSec,baseScore,timeBonus){
   demoBtn.style.display='block';
   demoBtn.disabled=false;
   demoBtn.textContent='お手本を見る';
+  document.querySelector('#resultOverlay .result-card').classList.toggle('perfect',isPerfect);
   document.getElementById('resultOverlay').classList.add('show');
 }
 function hideResultPopup(){
