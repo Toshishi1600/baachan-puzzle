@@ -131,7 +131,8 @@
 
   .overlay{
     position:fixed;inset:0;background:rgba(59,50,42,.45);
-    display:none;align-items:center;justify-content:center;padding:20px;z-index:10;
+    display:none;align-items:flex-start;justify-content:center;padding:14px;z-index:10;
+    overflow-y:auto;
   }
   .overlay.show{display:flex;}
   #rankingViewOverlay{z-index:20;} /* 結果ポップアップの上に重ねて表示するため */
@@ -139,7 +140,7 @@
   .diff-card{
     background:var(--paper);border-radius:22px;padding:20px 22px;
     width:100%;max-width:400px;box-shadow:0 10px 30px rgba(0,0,0,.25);text-align:center;
-    max-height:88dvh;overflow-y:auto;
+    max-height:calc(100dvh - 28px);overflow-y:auto;
   }
   .diff-card h2{margin:0 0 4px;font-size:29px;font-weight:900;}
   .diff-card p{margin:0 0 10px;font-size:16px;color:var(--ink-soft);}
