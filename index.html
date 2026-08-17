@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="app-version" content="1.4.2">
+<meta name="app-version" content="1.4.5">
 <title>いろあわせパズル</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
@@ -486,6 +486,7 @@ const I18N={
     nicknameTitle:'ニックネームをきめてね', nicknameSubtitle:'ランキングに表示される名前だよ(あとから変更もできます)',
     nicknamePlaceholder:'例: トシシ', nicknameConfirm:'けってい', nicknameCancel:'やめる',
     nicknameEmptyAlert:'ニックネームを入力してね',
+    nicknameInappropriateAlert:'不適切な名前が検知されました。別の名前を入力してね',
 
     rankingJoin:'🏆 みんなのランキングに参加する',
     rankingStatus:'🏆 <b>{name}</b>さんとして参加中',
@@ -563,6 +564,7 @@ const I18N={
     nicknameTitle:'Choose a nickname', nicknameSubtitle:"This name shows on the leaderboard (you can change it later)",
     nicknamePlaceholder:'e.g. Alex', nicknameConfirm:'OK', nicknameCancel:'Cancel',
     nicknameEmptyAlert:'Please enter a nickname',
+    nicknameInappropriateAlert:'That name was flagged as inappropriate. Please choose another one',
 
     rankingJoin:'🏆 Join the Leaderboard',
     rankingStatus:'🏆 Playing as <b>{name}</b>',
@@ -613,7 +615,7 @@ const DIFFICULTIES={
   easy:  {label:'かんたん', colors:5, rows:6, cols:6, color:'var(--c1)', scoreMult:0.7, delayedMerges:0, firstTapBottomRow:false, targetTime:60,  timeBonusPerSec:2, maxStartGroupSize:null, perfectBonus:200, undoPenalty:30},
   normal:{label:'ふつう',   colors:7, rows:6, cols:6, color:'var(--c2)', scoreMult:1,   delayedMerges:1, firstTapBottomRow:true,  targetTime:90,  timeBonusPerSec:4, maxStartGroupSize:9,   perfectBonus:400, undoPenalty:50},
   hard:  {label:'むずかしい',colors:7, rows:9, cols:8, color:'var(--c5)', scoreMult:1.4, delayedMerges:3, firstTapBottomRow:true,  targetTime:150, timeBonusPerSec:8, maxStartGroupSize:9,   perfectBonus:800, undoPenalty:80},
-  infinite:{label:'むげん', colors:7, rows:9, cols:8, color:'var(--c4)', scoreMult:1.4, delayedMerges:0, firstTapBottomRow:true,  targetTime:30,  timeBonusPerSec:0, maxStartGroupSize:9,   perfectBonus:0, isInfinite:true, undoPenalty:0}
+  infinite:{label:'むげん', colors:7, rows:9, cols:8, color:'var(--c4)', scoreMult:1.4, delayedMerges:0, firstTapBottomRow:true,  targetTime:30,  timeBonusPerSec:0, maxStartGroupSize:9,   perfectBonus:0, isInfinite:true, undoPenalty:80}
 };
 function diffName(key){ return t('diff_'+key+'_name'); }
 function diffDesc(key){ const d=DIFFICULTIES[key]; return t('diff_'+key+'_desc',{colors:d.colors,rows:d.rows,cols:d.cols}); }
@@ -623,7 +625,7 @@ const SYMBOLS=['●','■','▲','◆','★','✚','✖'];
 
 // ---------- みんなのランキング(Supabase) ----------
 // ※ バージョンを上げる時は、この値と<head>内のapp-versionメタタグの両方を書き換えること
-const APP_VERSION='1.4.2';
+const APP_VERSION='1.4.5';
 
 const SUPABASE_URL='https://jhrwpwpzxgxlvbartvqr.supabase.co/rest/v1/';
 const SUPABASE_KEY='sb_publishable_AaiMwnPXCL0oCfvQRqi9wA_x3Bl33da';
@@ -636,6 +638,23 @@ function setNickname(name){ try{ localStorage.setItem(NICKNAME_KEY,name); }catch
 function isRankingOptedIn(){ try{ return localStorage.getItem(RANKING_OPTIN_KEY)==='1'; }catch(e){ return false; } }
 function setRankingOptedIn(v){ try{ localStorage.setItem(RANKING_OPTIN_KEY, v?'1':'0'); }catch(e){} }
 function escapeHtml(s){ return s.replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+// 簡易的な不適切ワードチェック(ニックネーム用)。全角/半角・大文字小文字・記号の紛れ込みをある程度吸収してから判定する
+const BAD_WORDS=[
+  'しね','死ね','殺す','ころす','きえろ','消えろ','ばか','馬鹿','あほ','アホ','くそ','クソ','糞',
+  'ちんこ','まんこ','おっぱい','せっくす','sex','fuck','shit','bitch','asshole','dick','pussy',
+  'nigger','nigga','faggot','ちょん','きちがい','気違い','キチガイ'
+];
+function normalizeForFilter(s){
+  return s
+    .toLowerCase()
+    .replace(/[Ａ-Ｚａ-ｚ０-９]/g, ch=>String.fromCharCode(ch.charCodeAt(0)-0xFEE0)) // 全角英数を半角に
+    .replace(/[\s　._\-!！?？*＊]/g,''); // 空白や記号での分断をある程度無効化
+}
+function containsInappropriateWord(name){
+  const norm=normalizeForFilter(name);
+  return BAD_WORDS.some(w=>norm.includes(normalizeForFilter(w)));
+}
 
 // 画面には出さない、端末ごとの一意なID。同じニックネームの人がいても別人として区別するために使う
 function getUserId(){
@@ -1474,8 +1493,9 @@ function startGame(diff){
   updateGiveupButton();
   hintBtn.disabled=false;
   undoBtn.disabled=true;
-  undoBtn.style.display = d.isInfinite ? 'none' : 'block'; // むげんモードでは使わない
-  document.getElementById('actionRow').classList.toggle('no-undo', d.isInfinite);
+  undoBtn.style.display='block';
+  document.getElementById('actionRow').classList.remove('no-undo');
+  demoControls.style.display='none'; // 前のお手本再生ボタンが残ってしまうのを防ぐ
   document.getElementById('timeLabel').textContent = d.isInfinite ? t('timeLabelRemaining') : t('timeLabelElapsed');
   msgEl.textContent = d.firstTapBottomRow ? t('msgBottomFirst') : t('msgDefault');
   render();
@@ -1560,6 +1580,7 @@ function hideNicknameModal(){
 document.getElementById('nicknameConfirmBtn').addEventListener('click',()=>{
   const val=document.getElementById('nicknameInput').value.trim();
   if(!val){ alert(t('nicknameEmptyAlert')); return; }
+  if(containsInappropriateWord(val)){ alert(t('nicknameInappropriateAlert')); return; }
   setNickname(val.slice(0,10));
   setRankingOptedIn(true);
   hideNicknameModal();
