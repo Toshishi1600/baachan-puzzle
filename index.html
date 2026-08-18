@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="app-version" content="1.5.1">
+<meta name="app-version" content="1.5.4">
 <title>いろあわせパズル</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
@@ -199,6 +199,7 @@
     border-radius:14px;background:#fff;color:var(--ink);box-sizing:border-box;
   }
   .field-label{margin:14px 0 6px;font-size:14px;color:var(--ink-soft);font-weight:700;text-align:left;}
+  .field-hint{margin:0 0 8px;font-size:12px;color:var(--ink-soft);text-align:left;line-height:1.6;}
   .age-group-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
   .age-btn{
     background:#fff;border:2px solid var(--paper-deep);border-radius:14px;padding:12px 4px;
@@ -304,7 +305,7 @@
 
   .cal-card{
     background:var(--paper);border-radius:22px;padding:20px;
-    width:100%;max-width:440px;max-height:85dvh;overflow-y:auto;
+    width:100%;max-width:440px;max-height:calc(100dvh - 28px);overflow-y:auto;
     box-shadow:0 10px 30px rgba(0,0,0,.25);
   }
   .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
@@ -403,7 +404,8 @@
     <input type="text" id="nicknameInput" maxlength="10" placeholder="例: トシシ" class="nickname-input">
 
     <p class="field-label" id="friendCodeLabelText">合言葉(友だちに教える用)</p>
-    <input type="text" id="friendCodeInput" maxlength="10" placeholder="例: ABC123" class="nickname-input">
+    <p class="field-hint" id="friendCodeHintText">この合言葉を知っている友だちと、スコアを競えるようになるよ!ひらがな・カタカナ・漢字・英数字で自由に決めてOK</p>
+    <input type="text" id="friendCodeInput" maxlength="10" placeholder="例: あいことば" class="nickname-input">
 
     <p class="field-label" id="ageGroupLabelText">年代(任意)</p>
     <div class="age-group-row" id="ageGroupRow">
@@ -424,6 +426,7 @@
       <div class="cal-title" id="groupTitleText">グループ</div>
       <button id="groupOverlayClose">✕</button>
     </div>
+    <p class="field-hint" id="groupExplainText" style="margin-bottom:10px;">同じグループの仲間とだけ、ランキングを比べられるようになるよ。招待コードか、お互いの合言葉で誘い合えるよ</p>
     <div class="group-friendcode-box">
       <span id="myFriendCodeLabelText">あなたの合言葉:</span> <b id="myFriendCodeText">------</b>
     </div>
@@ -467,6 +470,7 @@
       <p id="tutorial2Text">🔴 <b>ふつう・むずかしい</b>では、さいしょの1回だけ<b>一番下の行</b>をタップしてね</p>
       <p id="tutorial3Text">💡 こまったら「ヒント」ボタンを押すと、消せるところを教えてくれるよ(次に消すスコアは半分になるよ)</p>
       <p id="tutorial4Text">↩️ 「1手戻る」を押すと直前の1手をやり直せるけど、少しスコアが減るよ</p>
+      <p id="tutorial5Text">🏆 難易度選択画面の「みんなのランキングに参加する」から、ニックネームと合言葉を登録すると、その合言葉を知ってる友だちとスコアを競えるようになるよ。合言葉を教え合えばグループも作れるよ!</p>
     </div>
     <button class="newgame" id="tutorialCloseBtn" style="width:100%;">わかった!あそぶ</button>
   </div>
@@ -563,7 +567,7 @@ const I18N={
     nicknameInappropriateAlert:'不適切な名前が検知されました。別の名前を入力してね',
     friendCodeLabel:'合言葉(友だちに教える用)', friendCodePlaceholder:'例: ABC123',
     ageGroupLabel:'年代(任意)', ageSenior:'👴 シニア', ageAdult:'👨 大人', ageYouth:'🧑\u200d🎓 若者', ageSkip:'答えない',
-    friendCodeInvalidAlert:'合言葉は4〜10文字の英数字で入力してね',
+    friendCodeInvalidAlert:'合言葉は2〜10文字の日本語・英数字で入力してね',
     friendCodeTakenAlert:'その合言葉はもう使われているみたい。別のにしてね',
     groupBtn:'👥 グループを管理',
     groupTitle:'グループ', myFriendCodeLabel:'あなたの合言葉:',
@@ -747,7 +751,7 @@ const SYMBOLS=['●','■','▲','◆','★','✚','✖'];
 
 // ---------- みんなのランキング(Supabase) ----------
 // ※ バージョンを上げる時は、この値と<head>内のapp-versionメタタグの両方を書き換えること
-const APP_VERSION='1.5.1';
+const APP_VERSION='1.5.4';
 
 const SUPABASE_URL='https://jhrwpwpzxgxlvbartvqr.supabase.co/rest/v1/';
 const SUPABASE_KEY='sb_publishable_AaiMwnPXCL0oCfvQRqi9wA_x3Bl33da';
@@ -971,6 +975,19 @@ async function supabaseInsertScore(nickname,diff,scoreVal,timeSec){
     },6000);
   }catch(e){ console.error('ランキング送信に失敗しました',e); }
 }
+// スコアには記録した時点のニックネームが入っているので、表示直前に「今のニックネーム」に差し替える
+async function overrideWithCurrentNicknames(rows){
+  const ids=[...new Set(rows.map(r=>r.user_id).filter(Boolean))];
+  if(!ids.length) return rows;
+  try{
+    const res=await fetchWithTimeout(`${SUPABASE_URL}profiles?user_id=in.(${ids.join(',')})&select=user_id,nickname`,{headers:{'apikey':SUPABASE_KEY}},6000);
+    if(!res.ok) return rows;
+    const profs=await res.json();
+    const map=new Map(profs.map(p=>[p.user_id,p.nickname]));
+    return rows.map(r=> map.has(r.user_id) ? {...r,nickname:map.get(r.user_id)} : r);
+  }catch(e){ console.error('最新ニックネームの取得に失敗しました',e); return rows; }
+}
+
 async function supabaseFetchTop(playDate,diff,limit){
   try{
     // 重複排除の余地を持たせるため、少し多めに取得してから同じ人ごとに最高点だけ残す
@@ -978,7 +995,8 @@ async function supabaseFetchTop(playDate,diff,limit){
     const res=await fetchWithTimeout(url,{headers:{'apikey':SUPABASE_KEY}},6000);
     if(!res.ok) return [];
     const rows=await res.json();
-    return dedupeTopByUser(rows,limit);
+    const deduped=dedupeTopByUser(rows,limit);
+    return await overrideWithCurrentNicknames(deduped);
   }catch(e){ console.error('ランキング取得に失敗しました',e); return []; }
 }
 
@@ -989,7 +1007,8 @@ async function supabaseFetchFullBoard(playDate,diff){
     const res=await fetchWithTimeout(url,{headers:{'apikey':SUPABASE_KEY}},6000);
     if(!res.ok) return [];
     const rows=await res.json();
-    return dedupeTopByUser(rows,300);
+    const deduped=dedupeTopByUser(rows,300);
+    return await overrideWithCurrentNicknames(deduped);
   }catch(e){ console.error('ランキング取得に失敗しました',e); return []; }
 }
 
@@ -1855,7 +1874,7 @@ document.getElementById('nicknameConfirmBtn').addEventListener('click',async ()=
 
   let code=document.getElementById('friendCodeInput').value.trim().toUpperCase();
   if(!code) code=generateFriendCode();
-  if(!/^[A-Z0-9]{4,10}$/.test(code)){ alert(t('friendCodeInvalidAlert')); return; }
+  if(!/^[A-Za-z0-9ぁ-んーァ-ヶ一-龯]{2,10}$/.test(code)){ alert(t('friendCodeInvalidAlert')); return; }
   if(containsInappropriateWord(code)){ alert(t('nicknameInappropriateAlert')); return; }
   if(code!==getFriendCode()){
     const taken=await isFriendCodeTaken(code);
