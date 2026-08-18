@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="app-version" content="1.5.4">
+<meta name="app-version" content="1.6.0">
 <title>いろあわせパズル</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
@@ -244,8 +244,22 @@
   .ranking-rank{font-weight:900;color:var(--shu);width:38px;flex-shrink:0;}
   .ranking-name{flex:1;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .ranking-score{font-weight:900;font-variant-numeric:tabular-nums;}
-  .day-ranking-line{font-size:13px;margin-top:6px;line-height:1.6;}
-  .day-loading{font-size:13px;margin-top:8px;color:var(--ink-soft);}
+  .day-date{font-size:16px;font-weight:900;color:var(--shu);text-align:center;margin-bottom:10px;}
+  .day-diff-tabs{display:flex;gap:6px;overflow-x:auto;margin-bottom:12px;padding-bottom:2px;}
+  .day-diff-tab{
+    flex-shrink:0;background:#fff;border:2px solid var(--paper-deep);border-radius:999px;
+    padding:8px 16px;font-size:13px;font-weight:700;color:var(--ink-soft);font-family:inherit;cursor:pointer;
+  }
+  .day-diff-tab.active{border-color:var(--shu);color:var(--shu);background:#fff6f1;}
+  .day-mine-card{
+    background:linear-gradient(160deg,#fff,var(--paper-deep));border-radius:16px;
+    padding:14px 16px;text-align:center;margin-bottom:14px;box-shadow:0 2px 8px rgba(59,50,42,.08);
+  }
+  .day-mine-label{font-size:12px;color:var(--ink-soft);font-weight:700;margin-bottom:2px;}
+  .day-mine-score{font-size:28px;font-weight:900;color:var(--shu);font-variant-numeric:tabular-nums;}
+  .day-mine-unit{font-size:14px;font-weight:700;margin-left:2px;}
+  .day-mine-meta{font-size:12px;color:var(--ink-soft);margin-top:2px;}
+  .day-top-label{font-size:13px;font-weight:700;color:var(--ink-soft);margin:0 0 6px;}
   .tutorial-body{text-align:left;margin-bottom:20px;}
   .tutorial-body p{font-size:16px;line-height:1.8;margin:0 0 14px;color:var(--ink);}
   .tutorial-body b{color:var(--shu);}
@@ -382,6 +396,7 @@
     </div>
     <div class="diff-subrow">
       <p id="diffSubtitleText">あとから下のボタンでも選べます</p>
+      <button class="card-cal-btn-inline" id="openTutorialFromDiff" aria-label="あそびかた">❓</button>
       <button class="card-cal-btn-inline" id="openCalFromDiff" aria-label="記録を見る">📅</button>
     </div>
     <button class="diff-choice" data-d="easy">
@@ -400,7 +415,10 @@
 <div class="overlay" id="nicknameOverlay">
   <div class="diff-card">
     <h2 id="nicknameTitleText">ニックネームをきめてね</h2>
-    <p id="nicknameSubtitleText">ランキングに表示される名前だよ(あとから変更もできます)</p>
+    <div class="diff-subrow">
+      <p id="nicknameSubtitleText">ランキングに表示される名前だよ(あとから変更もできます)</p>
+      <button class="card-cal-btn-inline" id="openGroupTutorialBtn" aria-label="ランキング・グループについて">❓</button>
+    </div>
     <input type="text" id="nicknameInput" maxlength="10" placeholder="例: トシシ" class="nickname-input">
 
     <p class="field-label" id="friendCodeLabelText">合言葉(友だちに教える用)</p>
@@ -417,6 +435,18 @@
 
     <button class="newgame" id="nicknameConfirmBtn" style="width:100%;margin-top:14px;">けってい</button>
     <button class="result-close" id="nicknameCancelBtn" style="width:100%;">やめる</button>
+  </div>
+</div>
+
+<div class="overlay" id="groupTutorialOverlay">
+  <div class="diff-card">
+    <h2>ランキング・グループについて</h2>
+    <div class="tutorial-body">
+      <p>🏆 ニックネームと合言葉を登録すると、その合言葉を知ってる友だちとスコアを競えるようになるよ</p>
+      <p>👥 合言葉をお互い教え合えば、グループも作れるよ!グループの仲間だけのランキングも見られるようになるよ</p>
+      <p>🙈 合言葉を教えなければ、誰にも見つからずに自分だけで遊ぶこともできるよ</p>
+    </div>
+    <button class="newgame" id="groupTutorialCloseBtn" style="width:100%;">わかった!</button>
   </div>
 </div>
 
@@ -470,7 +500,6 @@
       <p id="tutorial2Text">🔴 <b>ふつう・むずかしい</b>では、さいしょの1回だけ<b>一番下の行</b>をタップしてね</p>
       <p id="tutorial3Text">💡 こまったら「ヒント」ボタンを押すと、消せるところを教えてくれるよ(次に消すスコアは半分になるよ)</p>
       <p id="tutorial4Text">↩️ 「1手戻る」を押すと直前の1手をやり直せるけど、少しスコアが減るよ</p>
-      <p id="tutorial5Text">🏆 難易度選択画面の「みんなのランキングに参加する」から、ニックネームと合言葉を登録すると、その合言葉を知ってる友だちとスコアを競えるようになるよ。合言葉を教え合えばグループも作れるよ!</p>
     </div>
     <button class="newgame" id="tutorialCloseBtn" style="width:100%;">わかった!あそぶ</button>
   </div>
@@ -612,6 +641,9 @@ const I18N={
 
     calEmptyNote:'まだ記録がありません', calClose:'とじる',
     dayDetailNoRecord:'この日のあなたの記録はまだ無いよ',
+    dayMineLabel:'あなたの記録', dayMineMeta:'タイム {time} ・ プレイ {plays}回',
+    dayTopLabel:'トップ3', dayNothingHere:'この難易度の記録はまだ無いよ',
+    dayNoDataAtAll:'この日の記録はまだ無いみたい',
     dayRankingLoading:'🏆 みんなのランキングを読み込み中…',
     dayRankingTop3:'{label}トップ3:',
     dayDetailLine:'{label}: ベストスコア {score}({time})・プレイ {plays}回',
@@ -751,7 +783,7 @@ const SYMBOLS=['●','■','▲','◆','★','✚','✖'];
 
 // ---------- みんなのランキング(Supabase) ----------
 // ※ バージョンを上げる時は、この値と<head>内のapp-versionメタタグの両方を書き換えること
-const APP_VERSION='1.5.4';
+const APP_VERSION='1.6.0';
 
 const SUPABASE_URL='https://jhrwpwpzxgxlvbartvqr.supabase.co/rest/v1/';
 const SUPABASE_KEY='sb_publishable_AaiMwnPXCL0oCfvQRqi9wA_x3Bl33da';
@@ -1849,12 +1881,26 @@ document.getElementById('ageGroupRow').addEventListener('click',(e)=>{
   setActiveAgeButton(btn.dataset.age);
 });
 
+const GROUP_TUTORIAL_SEEN_KEY='puzzle-group-tutorial-seen';
+function showGroupTutorial(){
+  document.getElementById('groupTutorialOverlay').classList.add('show');
+}
+function hideGroupTutorial(){
+  document.getElementById('groupTutorialOverlay').classList.remove('show');
+  try{ localStorage.setItem(GROUP_TUTORIAL_SEEN_KEY,'1'); }catch(e){}
+}
+document.getElementById('openGroupTutorialBtn').addEventListener('click',showGroupTutorial);
+document.getElementById('groupTutorialCloseBtn').addEventListener('click',hideGroupTutorial);
+
 async function showNicknameModal(isJoinFlow){
   document.getElementById('nicknameInput').value=getNickname();
   document.getElementById('nicknameOverlay').dataset.joinFlow=isJoinFlow?'1':'0';
   document.getElementById('friendCodeInput').value=getFriendCode();
   setActiveAgeButton(getAgeGroup());
   document.getElementById('nicknameOverlay').classList.add('show');
+  let groupTutorialSeen=null;
+  try{ groupTutorialSeen=localStorage.getItem(GROUP_TUTORIAL_SEEN_KEY); }catch(e){}
+  if(!groupTutorialSeen){ showGroupTutorial(); }
   // 既にランキング参加中なら、最新のプロフィール(合言葉・年代)を取得して埋める
   if(isRankingOptedIn()){
     const p=await ensureProfile();
@@ -2182,6 +2228,7 @@ const tutorialOverlay=document.getElementById('tutorialOverlay');
 function showTutorial(){ tutorialOverlay.classList.add('show'); }
 function hideTutorial(){ tutorialOverlay.classList.remove('show'); }
 document.getElementById('openTutorial').addEventListener('click',showTutorial);
+document.getElementById('openTutorialFromDiff').addEventListener('click',showTutorial);
 document.getElementById('tutorialCloseBtn').addEventListener('click',()=>{
   hideTutorial();
   if(pendingFirstLaunch){
@@ -2300,50 +2347,61 @@ async function fetchAndMarkSharedDays(y,m,daysInMonth){
   }
 }
 
-function showDayDetail(key){
-  const rec=records[key];
-  let html=`<b>${key}</b><br>`;
-  if(rec){
-    Object.keys(DIFFICULTIES).forEach(diff=>{
-      if(rec[diff]){
-        const r=rec[diff];
-        html+=t('dayDetailLine',{label:diffName(diff),score:r.bestScore,time:fmtTime(r.bestTime),plays:r.plays})+'<br>';
-      }
-    });
-  }else{
-    html+=`<span style="color:var(--ink-soft);">${t('dayDetailNoRecord')}</span><br>`;
-  }
-  html+=`<div id="dayRankingLoading" class="day-loading">${t('dayRankingLoading')}</div>`;
-  dayDetail.innerHTML=html;
+async function showDayDetail(key){
+  const rec=records[key]||{};
+  dayDetail.innerHTML=`<div style="text-align:center;color:var(--ink-soft);">${t('rankingLoading')}</div>`;
   dayDetail.style.display='block';
-  fetchAndAppendDayRanking(key);
-}
 
-// その日の「みんなのトップ3」を難易度ごとに取得して追記する(通信できなければ何も表示しない)
-async function fetchAndAppendDayRanking(key){
-  try{
-    const sections=[];
-    for(const diff of Object.keys(DIFFICULTIES)){
-      const rows=await supabaseFetchTop(key,diff,3);
-      if(rows.length){
-        const list=rows.map((r,i)=>{
-          const isYou=r.user_id && r.user_id===getUserId();
-          return `${i+1}${t('positionSuffix')} ${escapeHtml(r.nickname)}${isYou?`(${t('youBadge')})`:''}(${r.score}${t('pointsSuffix')})`;
-        }).join('・');
-        sections.push(`<div class="day-ranking-line"><b>${t('dayRankingTop3',{label:diffName(diff)})}</b> ${list}</div>`);
-      }
-    }
-    const loadingEl=document.getElementById('dayRankingLoading');
-    if(loadingEl) loadingEl.remove();
-    if(sections.length){
-      dayDetail.insertAdjacentHTML('beforeend',
-        `<hr style="margin:10px 0;border:none;border-top:1px solid var(--paper-deep);">`+sections.join(''));
-    }
-  }catch(e){
-    const loadingEl=document.getElementById('dayRankingLoading');
-    if(loadingEl) loadingEl.remove();
-    console.error('その日のランキング取得でエラーが発生しました',e);
+  // 難易度ごとに、みんなのトップ3をまとめて取得しておく
+  const diffKeys=Object.keys(DIFFICULTIES);
+  const sharedPairs=await Promise.all(diffKeys.map(async diff=>[diff, await supabaseFetchTop(key,diff,3)]));
+  const sharedMap=Object.fromEntries(sharedPairs);
+
+  const availableDiffs=diffKeys.filter(diff=> rec[diff] || (sharedMap[diff] && sharedMap[diff].length));
+  if(!availableDiffs.length){
+    dayDetail.innerHTML=`<b>${key}</b><br><span style="color:var(--ink-soft);">${t('dayNoDataAtAll')}</span>`;
+    return;
   }
+
+  let html=`<div class="day-date">${key}</div>`;
+  html+=`<div class="day-diff-tabs" id="dayDiffTabs">`+
+    availableDiffs.map((diff,i)=>`<button type="button" class="day-diff-tab${i===0?' active':''}" data-diff="${diff}">${diffName(diff)}</button>`).join('')+
+    `</div>`;
+  html+=`<div id="dayDiffContent"></div>`;
+  dayDetail.innerHTML=html;
+
+  function renderDiffContent(diff){
+    const r=rec[diff];
+    const rows=sharedMap[diff]||[];
+    let inner='';
+    if(r){
+      inner+=`<div class="day-mine-card">
+        <div class="day-mine-label">${t('dayMineLabel')}</div>
+        <div class="day-mine-score">${r.bestScore}<span class="day-mine-unit">${t('pointsSuffix')}</span></div>
+        <div class="day-mine-meta">${t('dayMineMeta',{time:fmtTime(r.bestTime),plays:r.plays})}</div>
+      </div>`;
+    }
+    if(rows.length){
+      inner+=`<div class="day-top-label">${t('dayTopLabel')}</div>`;
+      inner+=rows.map((row,i)=>{
+        const isYou=row.user_id && row.user_id===getUserId();
+        return `<div class="ranking-row${isYou?' ranking-row-you':''}">
+          <span class="ranking-rank">${i+1}${t('positionSuffix')}</span>
+          <span class="ranking-name">${escapeHtml(row.nickname)}${isYou?` <span class="you-badge">${t('youBadge')}</span>`:''}</span>
+          <span class="ranking-score">${row.score}${t('pointsSuffix')}</span>
+        </div>`;
+      }).join('');
+    }
+    if(!inner) inner=`<div style="text-align:center;color:var(--ink-soft);">${t('dayNothingHere')}</div>`;
+    document.getElementById('dayDiffContent').innerHTML=inner;
+  }
+  renderDiffContent(availableDiffs[0]);
+  document.getElementById('dayDiffTabs').addEventListener('click',(e)=>{
+    const btn=e.target.closest('.day-diff-tab');
+    if(!btn) return;
+    document.querySelectorAll('#dayDiffTabs .day-diff-tab').forEach(b=>b.classList.toggle('active',b===btn));
+    renderDiffContent(btn.dataset.diff);
+  });
 }
 
 function openCalendar(){
