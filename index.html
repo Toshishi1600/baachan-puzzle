@@ -396,6 +396,7 @@
     </div>
     <div class="diff-subrow">
       <p id="diffSubtitleText">あとから下のボタンでも選べます</p>
+      <button class="card-cal-btn-inline" id="openTutorialFromDiff" aria-label="あそびかた">❓</button>
       <button class="card-cal-btn-inline" id="openCalFromDiff" aria-label="記録を見る">📅</button>
     </div>
     <button class="diff-choice" data-d="easy">
@@ -414,7 +415,10 @@
 <div class="overlay" id="nicknameOverlay">
   <div class="diff-card">
     <h2 id="nicknameTitleText">ニックネームをきめてね</h2>
-    <p id="nicknameSubtitleText">ランキングに表示される名前だよ(あとから変更もできます)</p>
+    <div class="diff-subrow">
+      <p id="nicknameSubtitleText">ランキングに表示される名前だよ(あとから変更もできます)</p>
+      <button class="card-cal-btn-inline" id="openGroupTutorialBtn" aria-label="ランキング・グループについて">❓</button>
+    </div>
     <input type="text" id="nicknameInput" maxlength="10" placeholder="例: トシシ" class="nickname-input">
 
     <p class="field-label" id="friendCodeLabelText">合言葉(友だちに教える用)</p>
@@ -431,6 +435,18 @@
 
     <button class="newgame" id="nicknameConfirmBtn" style="width:100%;margin-top:14px;">けってい</button>
     <button class="result-close" id="nicknameCancelBtn" style="width:100%;">やめる</button>
+  </div>
+</div>
+
+<div class="overlay" id="groupTutorialOverlay">
+  <div class="diff-card">
+    <h2>ランキング・グループについて</h2>
+    <div class="tutorial-body">
+      <p>🏆 ニックネームと合言葉を登録すると、その合言葉を知ってる友だちとスコアを競えるようになるよ</p>
+      <p>👥 合言葉をお互い教え合えば、グループも作れるよ!グループの仲間だけのランキングも見られるようになるよ</p>
+      <p>🙈 合言葉を教えなければ、誰にも見つからずに自分だけで遊ぶこともできるよ</p>
+    </div>
+    <button class="newgame" id="groupTutorialCloseBtn" style="width:100%;">わかった!</button>
   </div>
 </div>
 
@@ -484,7 +500,6 @@
       <p id="tutorial2Text">🔴 <b>ふつう・むずかしい</b>では、さいしょの1回だけ<b>一番下の行</b>をタップしてね</p>
       <p id="tutorial3Text">💡 こまったら「ヒント」ボタンを押すと、消せるところを教えてくれるよ(次に消すスコアは半分になるよ)</p>
       <p id="tutorial4Text">↩️ 「1手戻る」を押すと直前の1手をやり直せるけど、少しスコアが減るよ</p>
-      <p id="tutorial5Text">🏆 難易度選択画面の「みんなのランキングに参加する」から、ニックネームと合言葉を登録すると、その合言葉を知ってる友だちとスコアを競えるようになるよ。合言葉を教え合えばグループも作れるよ!</p>
     </div>
     <button class="newgame" id="tutorialCloseBtn" style="width:100%;">わかった!あそぶ</button>
   </div>
@@ -1866,12 +1881,26 @@ document.getElementById('ageGroupRow').addEventListener('click',(e)=>{
   setActiveAgeButton(btn.dataset.age);
 });
 
+const GROUP_TUTORIAL_SEEN_KEY='puzzle-group-tutorial-seen';
+function showGroupTutorial(){
+  document.getElementById('groupTutorialOverlay').classList.add('show');
+}
+function hideGroupTutorial(){
+  document.getElementById('groupTutorialOverlay').classList.remove('show');
+  try{ localStorage.setItem(GROUP_TUTORIAL_SEEN_KEY,'1'); }catch(e){}
+}
+document.getElementById('openGroupTutorialBtn').addEventListener('click',showGroupTutorial);
+document.getElementById('groupTutorialCloseBtn').addEventListener('click',hideGroupTutorial);
+
 async function showNicknameModal(isJoinFlow){
   document.getElementById('nicknameInput').value=getNickname();
   document.getElementById('nicknameOverlay').dataset.joinFlow=isJoinFlow?'1':'0';
   document.getElementById('friendCodeInput').value=getFriendCode();
   setActiveAgeButton(getAgeGroup());
   document.getElementById('nicknameOverlay').classList.add('show');
+  let groupTutorialSeen=null;
+  try{ groupTutorialSeen=localStorage.getItem(GROUP_TUTORIAL_SEEN_KEY); }catch(e){}
+  if(!groupTutorialSeen){ showGroupTutorial(); }
   // 既にランキング参加中なら、最新のプロフィール(合言葉・年代)を取得して埋める
   if(isRankingOptedIn()){
     const p=await ensureProfile();
@@ -2199,6 +2228,7 @@ const tutorialOverlay=document.getElementById('tutorialOverlay');
 function showTutorial(){ tutorialOverlay.classList.add('show'); }
 function hideTutorial(){ tutorialOverlay.classList.remove('show'); }
 document.getElementById('openTutorial').addEventListener('click',showTutorial);
+document.getElementById('openTutorialFromDiff').addEventListener('click',showTutorial);
 document.getElementById('tutorialCloseBtn').addEventListener('click',()=>{
   hideTutorial();
   if(pendingFirstLaunch){
